@@ -76,7 +76,14 @@ export class InputManager {
       const node = el as HTMLElement | null;
       return !!node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable);
     };
-    if (isEditable(e.target) || isEditable(document.activeElement)) return;
+    // Only ignore KEY-DOWN while focus is in a text editor (so WASD/Space
+    // don't leak into typed Python). A key-UP must always be processed no
+    // matter where focus is: if we also swallowed key-up, releasing a
+    // movement key while the editor happened to be focused (e.g. you walk
+    // up to a terminal mid-stride and it opens) would never clear that
+    // direction's `true` state, and the robot would keep moving on its own
+    // forever afterwards — a stuck key, not a feature.
+    if (down && (isEditable(e.target) || isEditable(document.activeElement))) return;
 
     switch (e.code) {
       case 'KeyW':
