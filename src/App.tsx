@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameScene } from './game/engine/GameScene';
 import { getMission } from './curriculum/missions';
+import { ENERGY_CHALLENGES } from './curriculum/energyChallenges';
 import type { LevelDef } from './curriculum/worlds';
 import { progressService } from './progress/progressService';
 import { PyodideRunner } from './python-lab/PyodideRunner';
@@ -18,6 +19,7 @@ function isTouchDevice() {
 }
 
 type Screen = 'hub' | 'game';
+type LabTarget = { kind: 'main' } | { kind: 'conduit'; index: number };
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,11 +34,19 @@ export default function App() {
   const [missionDone, setMissionDone] = useState(false);
   const [nearNpc, setNearNpc] = useState(false);
   const [nearTerminal, setNearTerminal] = useState(false);
+  const [nearConduit, setNearConduit] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [labOpen, setLabOpen] = useState(false);
+  const [labTarget, setLabTarget] = useState<LabTarget | null>(null);
   const [paused, setPaused] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
   const [gameReady, setGameReady] = useState(false);
+  const [energy, setEnergy] = useState<number | null>(null);
+  const [zapToast, setZapToast] = useState(false);
+  const [gateOpenToast, setGateOpenToast] = useState(false);
+  const zapTimeoutRef = useRef<number | null>(null);
+  const gateTimeoutRef = useRef<number | null>(null);
+
+  const labOpen = labTarget !== null;
 
   useEffect(() => {
     if (!runnerRef.current) runnerRef.current = new PyodideRunner();
@@ -54,12 +64,51 @@ export default function App() {
           onNearNpc: setNearNpc,
           onNearTerminal: setNearTerminal,
           onInteractNpc: () => setDialogOpen(true),
-          onInteractTerminal: () => setLabOpen(true),
+          onInteractTerminal: () => setLabTarget({ kind: 'main' }),
+          onNearConduit: setNearConduit,
+          onInteractConduit: (index) => setLabTarget({ kind: 'conduit', index }),
+          onEnergyChange: setEnergy,
+          onGateOpen: () => {
+            setGateOpenToast(true);
+            if (gateTimeoutRef.current) window.clearTimeout(gateTimeoutRef.current);
+            gateTimeoutRef.current = window.setTimeout(() => setGateOpenToast(false), 2600);
+          },
+          onZapped: () => {
+            setZapToast(true);
+            if (zapTimeoutRef.current) window.clearTimeout(zapTimeoutRef.current);
+            zapTimeoutRef.current = window.setTimeout(() => setZapToast(false), 1600);
+          },
         },
         activeLevel.topic,
+        activeLevel.id,
       );
       gameRef.current = game;
+      if (game.isHurdleLevel) setEnergy(0);
       setGameReady(true);
+      // Dev-only hook for automated QA (Playwright) to read the player's
+      // real position instead of guessing it from key-hold timing. Never
+      // present in a production build.
+      if (import.meta.env.DEV) {
+        (window as any).__ptlgDebugPos = () => {
+          const p = game.player.position;
+          return { x: p.x, y: p.y, z: p.z };
+        };
+        (window as any).__ptlgDebugState = () => ({
+          player: { x: game.player.position.x, y: game.player.position.y, z: game.player.position.z },
+          energy: game.energy,
+          gate: game.gate
+            ? {
+                checkCollisions: game.gate.mesh.checkCollisions,
+                isOpen: game.gate.isOpen,
+                y: game.gate.mesh.position.y,
+                enabled: game.gate.mesh.isEnabled(),
+              }
+            : null,
+          guardian: game.guardian
+            ? { state: (game.guardian as any).state, pos: { x: game.guardian.position.x, z: game.guardian.position.z } }
+            : null,
+        });
+      }
     } catch (err: any) {
       console.error('Failed to start the 3D scene', err);
       setBootError(String(err?.message ?? err));
@@ -70,9 +119,13 @@ export default function App() {
       setGameReady(false);
       setNearNpc(false);
       setNearTerminal(false);
+      setNearConduit(false);
       setDialogOpen(false);
-      setLabOpen(false);
+      setLabTarget(null);
       setBootError(null);
+      setEnergy(null);
+      setZapToast(false);
+      setGateOpenToast(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, activeLevel]);
@@ -99,14 +152,22 @@ export default function App() {
   }
 
   const mission = activeLevel?.missionId ? getMission(activeLevel.missionId) : undefined;
+  const isHurdleLevel = gameRef.current?.isHurdleLevel ?? activeLevel?.id === 'w1-l1';
 
   const missionText = !activeLevel
     ? ''
     : missionDone
       ? `Level ${activeLevel.globalNumber} complete — explore the village, or head back to the map!`
-      : `Level ${activeLevel.globalNumber}: ${activeLevel.topic} — find Py-Guide, then reach the terminal.`;
+      : isHurdleLevel
+        ? energy !== null && energy >= 100
+          ? 'Vault Gate open — run past the Guardian and reach the terminal!'
+          : 'Find both glowing Energy Conduits, solve their Python, and charge the Vault Gate — watch for the Guardian!'
+        : `Level ${activeLevel.globalNumber}: ${activeLevel.topic} — find Py-Guide, then reach the terminal.`;
 
-  const promptVisible = (nearNpc || nearTerminal) && !dialogOpen && !labOpen && !paused;
+  const activeLabMission =
+    labTarget?.kind === 'conduit' ? ENERGY_CHALLENGES[labTarget.index] : labTarget?.kind === 'main' ? mission : undefined;
+
+  const promptVisible = (nearNpc || nearTerminal || nearConduit) && !dialogOpen && !labOpen && !paused;
 
   return (
     <div className="app-root">
@@ -123,6 +184,7 @@ export default function App() {
       <HUD
         score={score}
         xp={xp}
+        energy={energy}
         missionText={missionText}
         missionDone={missionDone}
         onPause={() => setPaused(true)}
@@ -135,6 +197,17 @@ export default function App() {
         </div>
       )}
 
+      {zapToast && (
+        <div className="zap-toast" data-ui>
+          ⚡ Caught by the Guardian! −{20} energy
+        </div>
+      )}
+      {gateOpenToast && (
+        <div className="gate-toast" data-ui>
+          🔓 Vault Gate charged — the way to the terminal is open!
+        </div>
+      )}
+
       {gameReady && gameRef.current && (
         <TouchControls input={gameRef.current.input} visible={isTouchDevice()} />
       )}
@@ -142,7 +215,7 @@ export default function App() {
         <button
           className="touch-interact-fab"
           data-ui
-          style={{ display: nearNpc || nearTerminal ? 'block' : 'none' }}
+          style={{ display: nearNpc || nearTerminal || nearConduit ? 'block' : 'none' }}
           onTouchStart={(e) => {
             e.preventDefault();
             gameRef.current?.triggerInteract();
@@ -156,22 +229,29 @@ export default function App() {
         <DialogBubble lines={gameRef.current.npc.dialog} onClose={() => setDialogOpen(false)} />
       )}
 
-      {labOpen && runnerRef.current && mission && activeLevel && (
+      {labTarget && runnerRef.current && activeLabMission && activeLevel && (
         <PythonLabOverlay
-          key={mission.id}
-          mission={mission}
+          key={activeLabMission.id}
+          mission={activeLabMission}
           runner={runnerRef.current}
-          onClose={() => setLabOpen(false)}
+          onClose={() => setLabTarget(null)}
           onMissionComplete={() => {
             // Recorded once, the moment the check passes — regardless of
             // which button the student clicks next on the success panel.
-            setMissionDone(true);
-            setXp((x) => x + mission.rewardXp);
-            setScore((s) => s + mission.rewardCoins);
-            progressService.completeLevel(activeLevel.id, mission.rewardXp, mission.rewardCoins);
-            gameRef.current?.markTerminalSolved();
+            if (labTarget.kind === 'main' && mission) {
+              setMissionDone(true);
+              setXp((x) => x + mission.rewardXp);
+              setScore((s) => s + mission.rewardCoins);
+              progressService.completeLevel(activeLevel.id, mission.rewardXp, mission.rewardCoins);
+              gameRef.current?.markTerminalSolved();
+            } else if (labTarget.kind === 'conduit') {
+              const challenge = ENERGY_CHALLENGES[labTarget.index];
+              setXp((x) => x + challenge.rewardXp);
+              setScore((s) => s + challenge.rewardCoins);
+              gameRef.current?.markConduitSolved(labTarget.index);
+            }
           }}
-          onContinue={() => setLabOpen(false)}
+          onContinue={() => setLabTarget(null)}
           onBackToMap={handleBackToMap}
         />
       )}

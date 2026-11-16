@@ -26,16 +26,20 @@ export class VillageWorld {
 
   constructor(scene: Scene) {
     this.scene = scene;
-    scene.clearColor = new Color4(0.55, 0.78, 0.92, 1);
+    scene.clearColor = new Color4(0.48, 0.82, 0.98, 1);
 
-    // --- Lighting -------------------------------------------------------
+    // --- Lighting ------------------------------------------------------
+    // A slightly cooler, brighter sky + light mix than before — leans
+    // toward crisp cyan daylight rather than a muted haze.
     const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0.2), scene);
-    hemi.intensity = 0.75;
-    hemi.groundColor = new Color3(0.35, 0.4, 0.3);
+    hemi.intensity = 0.95;
+    hemi.diffuse = new Color3(0.9, 0.97, 1);
+    hemi.groundColor = new Color3(0.4, 0.48, 0.4);
 
     const sun = new DirectionalLight('sun', new Vector3(-0.5, -1, -0.3), scene);
     sun.position = new Vector3(20, 30, 20);
-    sun.intensity = 0.9;
+    sun.intensity = 1.05;
+    sun.diffuse = new Color3(1, 1, 0.97);
     this.shadowGenerator = new ShadowGenerator(1024, sun);
     this.shadowGenerator.usePercentageCloserFiltering = true;
 

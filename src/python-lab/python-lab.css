@@ -1,7 +1,7 @@
 .lab-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 14, 20, 0.72);
+  background: rgba(6, 10, 20, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,15 +10,15 @@
 }
 
 .lab-panel {
-  background: #10161c;
-  color: #e8f3f1;
-  border-radius: 14px;
-  border: 1px solid #22323a;
+  background: linear-gradient(165deg, #121c30, #0a1120);
+  color: #eaf6ff;
+  border-radius: 16px;
+  border: 1px solid rgba(90, 200, 255, 0.35);
+  box-shadow: 0 0 40px rgba(60, 170, 255, 0.25), 0 20px 60px rgba(0, 0, 0, 0.55);
   width: min(760px, 100%);
   max-height: 92vh;
   overflow-y: auto;
   padding: 18px 20px 22px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -31,70 +31,79 @@
 .lab-header h2 {
   font-size: 1.15rem;
   margin: 0;
+  color: #d7f0ff;
+  text-shadow: 0 0 10px rgba(90, 200, 255, 0.4);
 }
 .lab-close {
   background: transparent;
   border: none;
-  color: #9db3ae;
+  color: #9fd4f0;
   font-size: 1.2rem;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
 }
-.lab-close:hover { background: #1c2730; color: #fff; }
+.lab-close:hover { background: rgba(90, 200, 255, 0.15); color: #fff; }
 
 .lab-story {
-  color: #bcd2cd;
+  color: #bfe3f7;
   font-size: 0.92rem;
   line-height: 1.45;
   margin: 6px 0 14px;
 }
 
-.lab-editor-wrap { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #263038; }
+.lab-editor-wrap { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid rgba(90, 200, 255, 0.3); }
 .lab-loading {
   position: absolute; inset: 0; z-index: 2;
-  background: rgba(10, 16, 20, 0.92);
+  background: rgba(10, 16, 28, 0.94);
   display: flex; align-items: center; justify-content: center;
-  color: #8fe3cf; font-size: 0.9rem; text-align: center; padding: 20px;
+  color: #7fe9ff; font-size: 0.9rem; text-align: center; padding: 20px;
 }
 
 .lab-toolbar { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
 .lab-btn {
-  background: #1c2730;
-  color: #e8f3f1;
-  border: 1px solid #2d3a42;
+  background: rgba(40, 60, 90, 0.6);
+  color: #eaf6ff;
+  border: 1px solid rgba(100, 200, 255, 0.4);
   border-radius: 8px;
   padding: 9px 16px;
   font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
 }
-.lab-btn:hover { background: #26333c; }
+.lab-btn:hover { background: rgba(60, 90, 130, 0.7); }
 .lab-btn:disabled { opacity: 0.5; cursor: default; }
-.lab-btn-primary { background: #1f9d7c; border-color: #1f9d7c; font-weight: 600; }
-.lab-btn-primary:hover { background: #24b58f; }
+.lab-btn-primary {
+  background: linear-gradient(135deg, #21d0b8, #2fb8ff);
+  border-color: transparent;
+  color: #04241f;
+  font-weight: 800;
+  box-shadow: 0 0 16px rgba(60, 210, 255, 0.5);
+}
+.lab-btn-primary:hover { filter: brightness(1.08); }
 
 .lab-console {
-  background: #0a0f13;
-  border: 1px solid #22323a;
-  border-radius: 8px;
+  background: #060b14;
+  border: 1px solid rgba(90, 200, 255, 0.25);
+  border-radius: 10px;
   padding: 10px 12px;
   min-height: 90px;
 }
-.lab-console-label { font-size: 0.75rem; letter-spacing: 0.04em; color: #7b9893; margin-bottom: 4px; }
+.lab-console-label { font-size: 0.75rem; letter-spacing: 0.04em; color: #6fb8d9; margin-bottom: 4px; }
 .lab-console-body {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: 'Fira Code', Consolas, monospace;
   font-size: 0.86rem;
-  color: #d7ebe6;
+  color: #d8f3ff;
 }
 .lab-error {
   margin-top: 8px;
-  color: #ffb4a8;
-  background: #2a1414;
-  border: 1px solid #4a2222;
+  color: #ffc4bb;
+  background: rgba(60, 20, 25, 0.85);
+  border: 1px solid #a24040;
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 0.85rem;
@@ -102,56 +111,57 @@
 
 .lab-success {
   margin-top: 14px;
-  background: #112b1f;
-  border: 1px solid #1f6b4a;
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(30, 90, 70, 0.55), rgba(20, 60, 90, 0.55));
+  border: 1px solid rgba(100, 255, 200, 0.45);
+  box-shadow: 0 0 18px rgba(100, 255, 200, 0.2);
+  border-radius: 10px;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  color: #b7ffd8;
+  color: #cdffe9;
 }
 .lab-success-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .lab-hint {
-  background: #1f2a1a;
-  border: 1px solid #3a4a2a;
-  color: #d9e8b0;
-  border-radius: 6px;
+  background: rgba(60, 70, 30, 0.5);
+  border: 1px solid rgba(220, 230, 120, 0.4);
+  color: #ecf3b8;
+  border-radius: 8px;
   padding: 8px 10px;
   font-size: 0.85rem;
   margin: 0 0 12px;
 }
 
 .lab-predict-snippet {
-  background: #0a0f13;
-  border: 1px solid #22323a;
-  border-radius: 8px;
+  background: #060b14;
+  border: 1px solid rgba(90, 200, 255, 0.25);
+  border-radius: 10px;
   padding: 12px 14px;
   margin: 10px 0 14px;
   font-family: 'Fira Code', Consolas, monospace;
   font-size: 0.88rem;
-  color: #d7ebe6;
+  color: #d8f3ff;
   white-space: pre-wrap;
 }
 
 .lab-predict-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .lab-predict-option {
   text-align: left;
-  background: #1c2730;
-  color: #e8f3f1;
-  border: 1px solid #2d3a42;
+  background: rgba(40, 60, 90, 0.5);
+  color: #eaf6ff;
+  border: 1px solid rgba(100, 200, 255, 0.35);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.88rem;
   cursor: pointer;
 }
-.lab-predict-option:hover { background: #26333c; }
-.lab-predict-option.correct { background: #15402c; border-color: #1f9d7c; }
-.lab-predict-option.wrong { background: #402020; border-color: #7a3a3a; }
+.lab-predict-option:hover { background: rgba(60, 90, 130, 0.65); }
+.lab-predict-option.correct { background: rgba(30, 110, 80, 0.6); border-color: #3fe0a8; }
+.lab-predict-option.wrong { background: rgba(110, 40, 40, 0.6); border-color: #e06a6a; }
 
 .lab-predict-feedback {
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 12px;
   font-size: 0.88rem;
   display: flex;
@@ -159,8 +169,8 @@
   gap: 10px;
   align-items: flex-start;
 }
-.lab-predict-feedback.correct { background: #112b1f; border: 1px solid #1f6b4a; color: #b7ffd8; }
-.lab-predict-feedback.wrong { background: #2a1414; border: 1px solid #4a2222; color: #ffb4a8; }
+.lab-predict-feedback.correct { background: rgba(30, 90, 70, 0.55); border: 1px solid rgba(100, 255, 200, 0.4); color: #cdffe9; }
+.lab-predict-feedback.wrong { background: rgba(110, 40, 40, 0.5); border: 1px solid #e06a6a; color: #ffd4cc; }
 
 @media (max-width: 560px) {
   .lab-panel { padding: 14px; }

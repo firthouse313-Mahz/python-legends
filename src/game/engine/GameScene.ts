@@ -2,10 +2,16 @@ import { Engine, Scene, Vector3 } from '@babylonjs/core';
 import { InputManager } from '../controls/InputManager';
 import { RobotCharacter, PLAYER_COLORS } from '../characters/RobotCharacter';
 import { PlayerMovement } from '../characters/PlayerMovement';
+import { Guardian } from '../characters/Guardian';
 import { FollowCamera } from '../camera/FollowCamera';
 import { VillageWorld } from '../world/VillageWorld';
 import { Npc } from '../world/Npc';
 import { CodeTerminal } from '../world/Terminal';
+import { EnergyConduit } from '../world/EnergyConduit';
+import { EnergyGate } from '../world/EnergyGate';
+
+export const ENERGY_GATE_THRESHOLD = 100;
+export const ENERGY_ZAP_PENALTY = 20;
 
 export interface GameCallbacks {
   onScoreChange: (score: number) => void;
@@ -13,6 +19,12 @@ export interface GameCallbacks {
   onNearTerminal: (near: boolean) => void;
   onInteractNpc: () => void;
   onInteractTerminal: () => void;
+  /** Only fired for the hurdle level: near/interact with an energy conduit. */
+  onNearConduit: (near: boolean) => void;
+  onInteractConduit: (index: number) => void;
+  onEnergyChange: (energy: number) => void;
+  onGateOpen: () => void;
+  onZapped: () => void;
 }
 
 export class GameScene {
@@ -25,16 +37,23 @@ export class GameScene {
   camera: FollowCamera;
   npc: Npc;
   terminal: CodeTerminal;
+  conduits: EnergyConduit[] = [];
+  gate: EnergyGate | null = null;
+  guardian: Guardian | null = null;
+  readonly isHurdleLevel: boolean;
+  energy = 0;
 
   private score = 0;
   private running = true;
   private wasNearNpc = false;
   private wasNearTerminal = false;
+  private wasNearConduit = false;
   private resizeHandler = () => this.engine.resize();
   private callbacks: GameCallbacks;
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks, levelTopic: string) {
+  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks, levelTopic: string, levelId?: string) {
     this.callbacks = callbacks;
+    this.isHurdleLevel = levelId === 'w1-l1';
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
     this.scene = new Scene(this.engine);
     this.scene.collisionsEnabled = true;
@@ -55,13 +74,36 @@ export class GameScene {
 
     this.player = new PlayerMovement(this.scene, this.playerCharacter, this.input, () => this.camera.yaw);
 
-    this.npc = new Npc(this.scene, new Vector3(3, 0, -1), [
-      'Welcome back to Python Village, explorer!',
-      `This mission: ${levelTopic}.`,
-      'Walk up to the glowing terminal and press USE (or E) when you’re ready.',
-    ]);
+    this.npc = new Npc(
+      this.scene,
+      new Vector3(3, 0, -1),
+      this.isHurdleLevel
+        ? [
+            'Welcome to Python Village! This terminal is sealed behind the Vault Gate.',
+            'Find both glowing Energy Conduits and solve their Python to charge it open.',
+            'Careful — once you start, the Guardian Sentinel will patrol nearby. Getting caught costs you energy!',
+          ]
+        : [
+            'Welcome back to Python Village, explorer!',
+            `This mission: ${levelTopic}.`,
+            'Walk up to the glowing terminal and press USE (or E) when you’re ready.',
+          ],
+    );
 
-    this.terminal = new CodeTerminal(this.scene, new Vector3(5, 0, -3));
+    this.terminal = new CodeTerminal(this.scene, this.isHurdleLevel ? new Vector3(3, 0, -11) : new Vector3(5, 0, -3));
+
+    if (this.isHurdleLevel) {
+      this.conduits = [
+        new EnergyConduit(this.scene, new Vector3(-8, 0, -6)),
+        new EnergyConduit(this.scene, new Vector3(9, 0, -5)),
+      ];
+      // Spans the full width between the boundary walls (bounds = 14, so
+      // the map is 28 wide) with a little overlap past each wall — there
+      // must be NO gap at either end, or the player can just walk around
+      // the "hurdle" instead of earning their way past it.
+      this.gate = new EnergyGate(this.scene, new Vector3(0, 0, -7.5), 30);
+      this.guardian = new Guardian(this.scene, new Vector3(6, 0, -9), new Vector3(-4, 0, -9));
+    }
 
     this.input.onInteract(() => this.checkInteract());
 
@@ -75,7 +117,15 @@ export class GameScene {
     const pos = this.player.position;
     if (this.npc.isNear(pos)) {
       this.callbacks.onInteractNpc();
-    } else if (this.terminal.isNear(pos)) {
+      return;
+    }
+    for (let i = 0; i < this.conduits.length; i++) {
+      if (!this.conduits[i].solved && this.conduits[i].isNear(pos)) {
+        this.callbacks.onInteractConduit(i);
+        return;
+      }
+    }
+    if (this.terminal.isNear(pos)) {
       this.callbacks.onInteractTerminal();
     }
   }
@@ -95,6 +145,18 @@ export class GameScene {
       this.terminal.update(dt);
       this.checkCoinCollection();
 
+      for (const conduit of this.conduits) conduit.update(dt);
+      if (this.gate) this.gate.update(dt, this.energy / ENERGY_GATE_THRESHOLD);
+      if (this.guardian) {
+        this.guardian.update(dt, this.player.position);
+        if (this.guardian.isCatching(this.player.position)) {
+          this.guardian.zapAndRetreat();
+          this.energy = Math.max(0, this.energy - ENERGY_ZAP_PENALTY);
+          this.callbacks.onEnergyChange(this.energy);
+          this.callbacks.onZapped();
+        }
+      }
+
       const nearNpc = this.npc.isNear(this.player.position);
       if (nearNpc !== this.wasNearNpc) {
         this.wasNearNpc = nearNpc;
@@ -105,8 +167,27 @@ export class GameScene {
         this.wasNearTerminal = nearTerminal;
         this.callbacks.onNearTerminal(nearTerminal);
       }
+      const nearConduit = this.conduits.some((c) => !c.solved && c.isNear(this.player.position));
+      if (nearConduit !== this.wasNearConduit) {
+        this.wasNearConduit = nearConduit;
+        this.callbacks.onNearConduit(nearConduit);
+      }
     }
     this.scene.render();
+  }
+
+  /** Called by React once a conduit's Python challenge has been solved. */
+  markConduitSolved(index: number) {
+    const conduit = this.conduits[index];
+    if (!conduit || conduit.solved) return;
+    conduit.markSolved();
+    this.guardian?.activate();
+    this.energy = Math.min(ENERGY_GATE_THRESHOLD, this.energy + 50);
+    this.callbacks.onEnergyChange(this.energy);
+    if (this.energy >= ENERGY_GATE_THRESHOLD && this.gate && !this.gate.isOpen) {
+      this.gate.open();
+      this.callbacks.onGateOpen();
+    }
   }
 
   private checkCoinCollection() {

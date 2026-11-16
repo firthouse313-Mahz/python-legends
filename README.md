@@ -83,13 +83,38 @@ feedback that the game gave away every answer:**
   controls) was eating every Space character typed into the code editor,
   silently stripping spaces from strings students typed.
 
+**Real stakes in Level 1 — a chase/hurdle/energy proof-of-concept,** built
+after feedback that the game needed real tension, not just a terminal to
+solve:
+- **Two Energy Conduits** scattered around the village, each with its own
+  real Python challenge (one arithmetic, one a `for` loop). Solving one
+  charges 50/100 energy, shown as a live bar in the HUD.
+- **The Vault Gate:** a physical barrier (a real collider, not just a
+  visual) blocking the path to the main terminal until both conduits are
+  charged to 100. Verified it can't be walked around — it spans the full
+  width between the boundary walls — and that it genuinely holds at any
+  energy below 100.
+- **The Guardian Sentinel:** a chaser enemy that activates the moment the
+  first conduit is solved, patrols, and switches to actively chasing the
+  player when they get close. Catching the player costs 20 energy and
+  sends the Guardian into a cooldown — a real, escapable threat rather
+  than a hard fail state. (Its own collider is deliberately non-solid
+  against the player — two dynamic colliders pressing a thin wall at once
+  was found, during testing, to let the player tunnel straight through it.)
+- All of World 1's other 6 levels are unaffected by this and still work
+  exactly as before (re-verified end to end).
+
+**Brighter, cooler visual pass:** the HUD, the coding lab, and the World
+Map hub were redesigned with glowing cyan/violet glass panels and a
+cooler, higher-contrast sky and lighting in the village itself.
+
 Everything from Prompts 4–8 (the full 9-step learning cycle with
 story/predict/debug/apply/HOTS/boss per level, arcade polish, the Study
 Skills Academy, accounts/teacher dashboard, deployment/QA, and the
-separate SQL game) is **not** built yet. A genuine chase/escape-style
-challenge — closer to the "run, chase, escape, find treasure" game feel
-requested — is planned next, as a deliberately bigger build than this
-pass's fixes.
+separate SQL game) is **not** built yet, and the chase/hurdle mechanic
+above exists only on Level 1 so far — extending it (or a variant of it)
+across more levels is a natural next step once this proof-of-concept gets
+feedback.
 
 ### Known limitations (disclosed honestly, not swept under the rug)
 
