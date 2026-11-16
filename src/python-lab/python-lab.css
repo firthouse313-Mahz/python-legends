@@ -113,6 +113,55 @@
 }
 .lab-success-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
+.lab-hint {
+  background: #1f2a1a;
+  border: 1px solid #3a4a2a;
+  color: #d9e8b0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+
+.lab-predict-snippet {
+  background: #0a0f13;
+  border: 1px solid #22323a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0 14px;
+  font-family: 'Fira Code', Consolas, monospace;
+  font-size: 0.88rem;
+  color: #d7ebe6;
+  white-space: pre-wrap;
+}
+
+.lab-predict-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.lab-predict-option {
+  text-align: left;
+  background: #1c2730;
+  color: #e8f3f1;
+  border: 1px solid #2d3a42;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.lab-predict-option:hover { background: #26333c; }
+.lab-predict-option.correct { background: #15402c; border-color: #1f9d7c; }
+.lab-predict-option.wrong { background: #402020; border-color: #7a3a3a; }
+
+.lab-predict-feedback {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.lab-predict-feedback.correct { background: #112b1f; border: 1px solid #1f6b4a; color: #b7ffd8; }
+.lab-predict-feedback.wrong { background: #2a1414; border: 1px solid #4a2222; color: #ffb4a8; }
+
 @media (max-width: 560px) {
   .lab-panel { padding: 14px; }
   .lab-header h2 { font-size: 1rem; }

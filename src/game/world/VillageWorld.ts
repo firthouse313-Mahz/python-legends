@@ -146,4 +146,69 @@ export class VillageWorld {
       c.mesh.position.y = 1 + Math.sin(t + c.mesh.position.x) * 0.12;
     }
   }
+
+  private treasureCount = 0;
+
+  /**
+   * The physical payoff for solving a terminal: a treasure chest pops open
+   * on the spot and scatters a few bonus coins nearby for the player to
+   * run over and actually collect — something happens in the 3D world,
+   * not just a text banner.
+   */
+  spawnTreasureChest(nearPosition: Vector3): void {
+    const id = this.treasureCount++;
+    const woodMat = new StandardMaterial(`chestWood${id}`, this.scene);
+    woodMat.diffuseColor = new Color3(0.5, 0.32, 0.15);
+    const goldMat = new StandardMaterial(`chestGold${id}`, this.scene);
+    goldMat.diffuseColor = new Color3(0.9, 0.75, 0.2);
+    goldMat.emissiveColor = new Color3(0.4, 0.32, 0.05);
+
+    const chestPos = nearPosition.clone();
+    chestPos.y = 0;
+
+    const base = MeshBuilder.CreateBox(`chestBase${id}`, { width: 0.7, height: 0.4, depth: 0.5 }, this.scene);
+    base.position = chestPos.add(new Vector3(0, 0.2, 0));
+    base.material = woodMat;
+    this.shadowGenerator.addShadowCaster(base);
+
+    const lid = MeshBuilder.CreateBox(`chestLid${id}`, { width: 0.72, height: 0.22, depth: 0.52 }, this.scene);
+    lid.position = chestPos.add(new Vector3(0, 0.42, -0.14));
+    lid.rotation.x = -0.9; // tipped back — the chest is shown already open
+    lid.material = woodMat;
+
+    const trim = MeshBuilder.CreateBox(`chestTrim${id}`, { width: 0.74, height: 0.08, depth: 0.52 }, this.scene);
+    trim.position = chestPos.add(new Vector3(0, 0.4, 0));
+    trim.material = goldMat;
+
+    // Pop-open bounce.
+    const start = Date.now();
+    const obs = this.scene.onBeforeRenderObservable.add(() => {
+      const t = (Date.now() - start) / 260;
+      if (t >= 1) {
+        base.scaling.set(1, 1, 1);
+        this.scene.onBeforeRenderObservable.remove(obs);
+        return;
+      }
+      const s = 1 + Math.sin(t * Math.PI) * 0.25;
+      base.scaling.set(s, s, s);
+    });
+
+    const coinMat = new StandardMaterial(`bonusCoinMat${id}`, this.scene);
+    coinMat.diffuseColor = new Color3(1, 0.84, 0.2);
+    coinMat.emissiveColor = new Color3(0.55, 0.42, 0.05);
+
+    const scatter: [number, number][] = [
+      [0.9, 0.4],
+      [-0.7, 0.8],
+      [0.3, -0.9],
+    ];
+    scatter.forEach(([dx, dz], i) => {
+      const coin = MeshBuilder.CreateTorus(`bonusCoin${id}-${i}`, { diameter: 0.55, thickness: 0.18, tessellation: 16 }, this.scene);
+      coin.position.set(chestPos.x + dx, 1, chestPos.z + dz);
+      coin.rotation.x = Math.PI / 2;
+      coin.material = coinMat;
+      this.shadowGenerator.addShadowCaster(coin);
+      this.coins.push({ mesh: coin, collected: false });
+    });
+  }
 }

@@ -123,6 +123,10 @@ export class GameScene {
 
   markTerminalSolved() {
     this.terminal.markSolved();
+    // The tangible payoff: a treasure chest actually pops open in the
+    // world next to the terminal, not just a text banner — something the
+    // player then has to go run over and collect.
+    this.world.spawnTreasureChest(this.terminal.position.add(new Vector3(1.4, 0, 1.0)));
   }
 
   setPaused(paused: boolean) {

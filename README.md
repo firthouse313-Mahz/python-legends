@@ -9,7 +9,12 @@ This is a separate project from the main DigiClass platform, linked from its
 "Digi Game" nav card. SQL is planned as a separate, future game and is out
 of scope here.
 
-## Status: Prompt 2 complete (curriculum worlds and level system)
+## Status: Prompt 3 in progress (real Python coding laboratory)
+
+**Deployed:** a built version is pushed to the `gh-pages` branch, for
+GitHub Pages at `https://<account>.github.io/python-legends/` once Pages is
+enabled in the repo settings (Settings → Pages → Deploy from branch →
+`gh-pages` / root).
 
 ### What exists right now, tested end-to-end
 
@@ -54,10 +59,37 @@ of scope here.
   Pyodide (including real `input()` support via a fixed pre-supplied
   answer for the `input()` and type-conversion levels).
 
-Everything from Prompts 3–8 (the full Pyodide lab upgrades, the complete
-9-step learning cycle with predict/debug/HOTS/boss per level, arcade
-polish, the Study Skills Academy, accounts/teacher dashboard,
-deployment/QA, and the separate SQL game) is **not** built yet.
+**The real coding-lab upgrades (Prompt 3), built after critical testing
+feedback that the game gave away every answer:**
+- **Every mission's starter code was rewritten to remove the working
+  solution.** Starter code now contains only task instructions/comments —
+  students must actually write the Python themselves. Verified with an
+  automated Playwright run that solves all 7 levels by *hand-typing* real
+  code (not pre-filled), and separately confirms an unmodified/blank
+  starter genuinely fails.
+- **A tangible, visible reward for solving a terminal:** a treasure chest
+  pops open in the 3D world next to the terminal with bonus coins
+  scattered around it to run over and collect — not just a text banner.
+- **Hidden test cases:** two missions (`input()`, type conversion) quietly
+  re-run the student's code with a second, different input after the
+  visible one passes, so a hard-coded answer that only matches the one
+  example on screen is caught and rejected.
+- **Predict-the-output questions** before the editor on two levels, and a
+  **bonus debugging challenge** (fix an intentionally broken variable-name
+  typo) on the variables level.
+- **Friendly, mapped runtime-error messages** and an output-length cap in
+  the Pyodide worker, instead of raw Python tracebacks.
+- Fixed a real bug where the global keyboard handler (for WASD/Space game
+  controls) was eating every Space character typed into the code editor,
+  silently stripping spaces from strings students typed.
+
+Everything from Prompts 4–8 (the full 9-step learning cycle with
+story/predict/debug/apply/HOTS/boss per level, arcade polish, the Study
+Skills Academy, accounts/teacher dashboard, deployment/QA, and the
+separate SQL game) is **not** built yet. A genuine chase/escape-style
+challenge — closer to the "run, chase, escape, find treasure" game feel
+requested — is planned next, as a deliberately bigger build than this
+pass's fixes.
 
 ### Known limitations (disclosed honestly, not swept under the rug)
 

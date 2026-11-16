@@ -64,6 +64,20 @@ export class InputManager {
   }
 
   private onKey(e: KeyboardEvent, down: boolean) {
+    // This listener is on `window`, so without this guard it fires for
+    // every keystroke everywhere — including while typing Python in the
+    // CodeMirror editor. That's not just distracting (WASD "moving" the
+    // paused player underneath); `case 'Space'` below calls
+    // preventDefault() unconditionally, which was silently eating every
+    // space character a student typed into their code. Ignore all game
+    // input whenever the focus (or the event's own target) is a text
+    // editor / input, exactly as a real user would expect.
+    const isEditable = (el: EventTarget | null) => {
+      const node = el as HTMLElement | null;
+      return !!node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable);
+    };
+    if (isEditable(e.target) || isEditable(document.activeElement)) return;
+
     switch (e.code) {
       case 'KeyW':
       case 'ArrowUp':

@@ -13,6 +13,7 @@ interface ProgressState {
   pathway: PathwayChoice;
   startedLevelIds: string[];
   completedLevelIds: string[];
+  completedBonusIds: string[];
   totalXp: number;
   totalCoins: number;
 }
@@ -20,7 +21,7 @@ interface ProgressState {
 const STORAGE_KEY = 'python-legends:progress:v1';
 
 function defaultState(): ProgressState {
-  return { pathway: 'cs', startedLevelIds: [], completedLevelIds: [], totalXp: 0, totalCoins: 0 };
+  return { pathway: 'cs', startedLevelIds: [], completedLevelIds: [], completedBonusIds: [], totalXp: 0, totalCoins: 0 };
 }
 
 function loadState(): ProgressState {
@@ -92,6 +93,24 @@ export const progressService = {
     state = {
       ...state,
       completedLevelIds: [...state.completedLevelIds, levelId],
+      totalXp: state.totalXp + rewardXp,
+      totalCoins: state.totalCoins + rewardCoins,
+    };
+    saveState(state);
+    notify();
+  },
+
+  isBonusCompleted(bonusId: string): boolean {
+    return state.completedBonusIds.includes(bonusId);
+  },
+
+  /** Bonus debug-challenge completion, tracked separately from level
+   *  completion so it can't be farmed for repeat XP/coins on replay. */
+  completeBonus(bonusId: string, rewardXp: number, rewardCoins: number) {
+    if (state.completedBonusIds.includes(bonusId)) return;
+    state = {
+      ...state,
+      completedBonusIds: [...state.completedBonusIds, bonusId],
       totalXp: state.totalXp + rewardXp,
       totalCoins: state.totalCoins + rewardCoins,
     };

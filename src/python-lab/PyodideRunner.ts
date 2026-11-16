@@ -32,7 +32,13 @@ export class PyodideRunner {
     this.worker.onerror = (e) => {
       console.error('Python worker error', e);
     };
-    this.worker.postMessage({ kind: 'init' });
+    // import.meta.env.BASE_URL is only safe to read here, on the main
+    // thread's own module graph — pyodideWorker.ts is a classic (non
+    // -module) worker, where `import.meta` isn't valid syntax at runtime
+    // in dev (only Vite's production bundler statically replaces it, and
+    // only inconsistently for classic workers), so the base path is
+    // computed here and handed over explicitly instead.
+    this.worker.postMessage({ kind: 'init', base: import.meta.env.BASE_URL });
   }
 
   private handleMessage(msg: any) {
