@@ -34,9 +34,13 @@ declare function importScripts(...urls: string[]): void;
 async function getPyodide() {
   if (!pyodideReady) {
     pyodideReady = (async () => {
-      importScripts('/pyodide/pyodide.js');
+      // BASE_URL respects the Vite `base` config (e.g. "/python-legends/"
+      // on GitHub Pages, "/" in local dev) so these absolute-looking paths
+      // still resolve correctly once this is served from a subpath.
+      const base = (import.meta as any).env?.BASE_URL ?? '/';
+      importScripts(`${base}pyodide/pyodide.js`);
       const loadPyodide = (self as any).loadPyodide;
-      const pyodide = await loadPyodide({ indexURL: '/pyodide/' });
+      const pyodide = await loadPyodide({ indexURL: `${base}pyodide/` });
       return pyodide;
     })();
   }
