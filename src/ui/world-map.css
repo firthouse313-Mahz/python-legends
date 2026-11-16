@@ -1,0 +1,116 @@
+.world-map-screen {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0c1016 0%, #121820 100%);
+  color: #e8f3f1;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  padding: 20px 16px 48px;
+}
+
+.world-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 880px;
+  margin: 0 auto 4px;
+}
+.world-map-header h1 { font-size: 1.3rem; margin: 0 0 4px; }
+.world-map-subtitle { margin: 0; color: #9fc3bb; font-size: 0.88rem; }
+
+.pathway-toggle { display: flex; gap: 6px; background: #1a222a; border-radius: 10px; padding: 4px; }
+.pathway-toggle button {
+  background: transparent; border: none; color: #9fc3bb; padding: 7px 12px;
+  border-radius: 8px; font-size: 0.82rem; cursor: pointer;
+}
+.pathway-toggle button.active { background: #1f9d7c; color: #06140f; font-weight: 600; }
+
+.pathway-note {
+  max-width: 880px; margin: 4px auto 18px; color: #7b9893; font-size: 0.78rem; line-height: 1.4;
+}
+
+.world-list { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+.world-card {
+  background: #151d24;
+  border: 1px solid #263038;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.world-card.world-not-implemented { opacity: 0.82; }
+
+.world-card-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 14px 16px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.world-name { font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.world-soon-tag {
+  font-size: 0.68rem; letter-spacing: 0.03em; text-transform: uppercase;
+  background: #3a2f1a; color: #e8b85e; padding: 2px 7px; border-radius: 999px;
+}
+.world-tagline { font-size: 0.82rem; color: #8fa6a1; margin-top: 2px; }
+.world-meta { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #9fc3bb; }
+.world-difficulty {
+  background: #1f2a31; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem;
+}
+.world-chevron { transition: transform 0.15s ease; color: #6e8a85; }
+.world-chevron.open { transform: rotate(180deg); }
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+  padding: 4px 16px 16px;
+}
+
+.level-card {
+  background: #1a232a;
+  border: 1px solid #2a363f;
+  border-radius: 10px;
+  padding: 10px 10px 8px;
+  text-align: left;
+  color: #e8f3f1;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 86px;
+}
+.level-card:disabled { cursor: default; opacity: 0.55; }
+.level-card:not(:disabled):hover { background: #22303a; border-color: #1f9d7c; }
+
+.level-card-top { display: flex; justify-content: space-between; align-items: center; }
+.level-number { font-size: 0.72rem; color: #6e8a85; font-weight: 600; }
+.level-badge { font-size: 0.78rem; }
+.level-badge-completed { color: #37e29b; }
+.level-badge-locked { opacity: 0.7; }
+.level-badge-coming_soon { color: #6e8a85; }
+.level-badge-unlocked { color: #ffd166; }
+.level-badge-in_progress { color: #5bc8f5; }
+
+.level-topic { font-size: 0.82rem; line-height: 1.25; flex: 1; }
+.level-action { font-size: 0.72rem; color: #7b9893; font-weight: 600; letter-spacing: 0.02em; }
+.level-in_progress .level-action,
+.level-unlocked .level-action { color: #24b58f; }
+.level-completed .level-action { color: #37e29b; }
+
+.world-not-built-note {
+  margin: 0; padding: 0 16px 16px; color: #8fa6a1; font-size: 0.8rem; line-height: 1.45;
+}
+
+@media (max-width: 560px) {
+  .world-map-header { flex-direction: column; }
+  .level-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}

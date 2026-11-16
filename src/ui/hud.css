@@ -34,6 +34,19 @@
 
 .hud-icon { font-size: 1rem; }
 
+.hud-back {
+  pointer-events: auto;
+  background: rgba(10, 16, 20, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+}
+
 .hud-pause {
   pointer-events: auto;
   margin-left: auto;

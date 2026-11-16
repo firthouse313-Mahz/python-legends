@@ -6,12 +6,18 @@ interface Props {
   missionText: string;
   missionDone: boolean;
   onPause: () => void;
+  onBackToMap?: () => void;
 }
 
-export function HUD({ score, xp, missionText, missionDone, onPause }: Props) {
+export function HUD({ score, xp, missionText, missionDone, onPause, onBackToMap }: Props) {
   return (
     <div className="hud" data-ui>
       <div className="hud-top">
+        {onBackToMap && (
+          <button className="hud-back" onClick={onBackToMap} aria-label="Back to World Map">
+            ← Map
+          </button>
+        )}
         <div className="hud-stat">
           <span className="hud-icon">🪙</span>
           <span>{score}</span>

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameScene } from './game/engine/GameScene';
-import { MISSION_1 } from './game/missions/mission1';
+import { getMission } from './curriculum/missions';
+import type { LevelDef } from './curriculum/worlds';
+import { progressService } from './progress/progressService';
 import { PyodideRunner } from './python-lab/PyodideRunner';
 import { PythonLabOverlay } from './python-lab/PythonLabOverlay';
+import { WorldMapScreen } from './ui/WorldMapScreen';
 import { HUD } from './ui/HUD';
 import { TouchControls } from './ui/TouchControls';
 import { PauseMenu } from './ui/PauseMenu';
@@ -14,10 +17,15 @@ function isTouchDevice() {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
+type Screen = 'hub' | 'game';
+
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameScene | null>(null);
   const runnerRef = useRef<PyodideRunner | null>(null);
+
+  const [screen, setScreen] = useState<Screen>('hub');
+  const [activeLevel, setActiveLevel] = useState<LevelDef | null>(null);
 
   const [score, setScore] = useState(0);
   const [xp, setXp] = useState(0);
@@ -35,15 +43,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (screen !== 'game' || !activeLevel || !canvasRef.current) return;
+    setMissionDone(progressService.isCompleted(activeLevel.id));
+    progressService.markStarted(activeLevel.id);
     try {
-      const game = new GameScene(canvasRef.current, {
-        onScoreChange: setScore,
-        onNearNpc: setNearNpc,
-        onNearTerminal: setNearTerminal,
-        onInteractNpc: () => setDialogOpen(true),
-        onInteractTerminal: () => setLabOpen(true),
-      });
+      const game = new GameScene(
+        canvasRef.current,
+        {
+          onScoreChange: setScore,
+          onNearNpc: setNearNpc,
+          onNearTerminal: setNearTerminal,
+          onInteractNpc: () => setDialogOpen(true),
+          onInteractTerminal: () => setLabOpen(true),
+        },
+        activeLevel.topic,
+      );
       gameRef.current = game;
       setGameReady(true);
     } catch (err: any) {
@@ -54,17 +68,43 @@ export default function App() {
       gameRef.current?.dispose();
       gameRef.current = null;
       setGameReady(false);
+      setNearNpc(false);
+      setNearTerminal(false);
+      setDialogOpen(false);
+      setLabOpen(false);
+      setBootError(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [screen, activeLevel]);
 
   useEffect(() => {
     gameRef.current?.setPaused(paused || labOpen || dialogOpen);
   }, [paused, labOpen, dialogOpen]);
 
-  const missionText = missionDone
-    ? 'Mission complete — explore the village!'
-    : 'Find Py-Guide, then reach the glowing terminal and write real Python.';
+  function handlePlayLevel(level: LevelDef) {
+    const mission = level.missionId ? getMission(level.missionId) : undefined;
+    if (!mission) return; // coming-soon / not-yet-implemented level — nothing to play.
+    setActiveLevel(level);
+    setScreen('game');
+  }
+
+  function handleBackToMap() {
+    setScreen('hub');
+    setActiveLevel(null);
+    setPaused(false);
+  }
+
+  if (screen === 'hub') {
+    return <WorldMapScreen onPlayLevel={handlePlayLevel} />;
+  }
+
+  const mission = activeLevel?.missionId ? getMission(activeLevel.missionId) : undefined;
+
+  const missionText = !activeLevel
+    ? ''
+    : missionDone
+      ? `Level ${activeLevel.globalNumber} complete — explore the village, or head back to the map!`
+      : `Level ${activeLevel.globalNumber}: ${activeLevel.topic} — find Py-Guide, then reach the terminal.`;
 
   const promptVisible = (nearNpc || nearTerminal) && !dialogOpen && !labOpen && !paused;
 
@@ -86,6 +126,7 @@ export default function App() {
         missionText={missionText}
         missionDone={missionDone}
         onPause={() => setPaused(true)}
+        onBackToMap={handleBackToMap}
       />
 
       {promptVisible && (
@@ -115,18 +156,23 @@ export default function App() {
         <DialogBubble lines={gameRef.current.npc.dialog} onClose={() => setDialogOpen(false)} />
       )}
 
-      {labOpen && runnerRef.current && (
+      {labOpen && runnerRef.current && mission && activeLevel && (
         <PythonLabOverlay
-          mission={MISSION_1}
+          key={mission.id}
+          mission={mission}
           runner={runnerRef.current}
           onClose={() => setLabOpen(false)}
-          onSuccess={() => {
+          onMissionComplete={() => {
+            // Recorded once, the moment the check passes — regardless of
+            // which button the student clicks next on the success panel.
             setMissionDone(true);
-            setXp((x) => x + MISSION_1.rewardXp);
-            setScore((s) => s + MISSION_1.rewardCoins);
+            setXp((x) => x + mission.rewardXp);
+            setScore((s) => s + mission.rewardCoins);
+            progressService.completeLevel(activeLevel.id, mission.rewardXp, mission.rewardCoins);
             gameRef.current?.markTerminalSolved();
-            setLabOpen(false);
           }}
+          onContinue={() => setLabOpen(false)}
+          onBackToMap={handleBackToMap}
         />
       )}
 

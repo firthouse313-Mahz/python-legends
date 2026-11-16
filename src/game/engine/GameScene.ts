@@ -33,7 +33,7 @@ export class GameScene {
   private resizeHandler = () => this.engine.resize();
   private callbacks: GameCallbacks;
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
+  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks, levelTopic: string) {
     this.callbacks = callbacks;
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
     this.scene = new Scene(this.engine);
@@ -56,9 +56,9 @@ export class GameScene {
     this.player = new PlayerMovement(this.scene, this.playerCharacter, this.input, () => this.camera.yaw);
 
     this.npc = new Npc(this.scene, new Vector3(3, 0, -1), [
-      "Welcome to Python Village, explorer!",
-      'See that glowing terminal nearby? It only wakes up for real Python code.',
-      'Walk up to it and press USE (or E) — your first mission awaits!',
+      'Welcome back to Python Village, explorer!',
+      `This mission: ${levelTopic}.`,
+      'Walk up to the glowing terminal and press USE (or E) when you’re ready.',
     ]);
 
     this.terminal = new CodeTerminal(this.scene, new Vector3(5, 0, -3));
