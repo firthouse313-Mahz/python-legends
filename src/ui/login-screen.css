@@ -97,27 +97,3 @@
   cursor: default;
 }
 
-.login-whoami {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 20;
-  background: rgba(14, 22, 38, 0.85);
-  border: 1px solid rgba(90, 200, 255, 0.3);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.78rem;
-  color: #9cc7e8;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.login-whoami button {
-  background: none;
-  border: none;
-  color: #ff8a8a;
-  font-size: 0.76rem;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}

@@ -237,13 +237,13 @@ export default function App() {
 
   if (screen === 'hub') {
     return (
-      <>
-        <div className="login-whoami" data-ui>
-          <span>👤 {identity.name}</span>
-          <button onClick={handleLogOut}>Log out</button>
-        </div>
-        <WorldMapScreen onPlayLevel={handlePlayLevel} />
-      </>
+      <WorldMapScreen
+        onPlayLevel={handlePlayLevel}
+        identity={identity}
+        onLogOut={handleLogOut}
+        muted={muted}
+        onToggleMute={toggleMute}
+      />
     );
   }
 
