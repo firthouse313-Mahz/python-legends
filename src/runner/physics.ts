@@ -17,6 +17,9 @@ export interface RunnerPhysics {
   slideQueued: boolean;
   /** True whenever a gate/boss overlay or the pause menu has stopped the run. */
   paused: boolean;
+  /** Mirrors the HUD's energy React state, so the 60fps loop (the chaser's
+   *  distance) can read it without re-rendering the scene every hit. */
+  energy: number;
   hitIds: Set<string>;
   collectedIds: Set<string>;
   completedGates: Set<string>;
@@ -26,6 +29,18 @@ export interface RunnerPhysics {
 
 export const BASE_SPEED = 6.2;
 export const BOOST_SPEED_MULT = 1.65;
+/** How much faster the run gets by the very end of a world's track (on top
+ *  of that world's own base multiplier) — the chase gets tighter as you go,
+ *  instead of every level feeling the same speed. */
+export const MAX_PROGRESS_SPEED_BONUS = 0.4;
+
+/** The run speed at a given point in a world, after both that world's own
+ *  base multiplier (harder worlds start faster) and how far along its
+ *  track the player has gotten (each world ramps up toward its own end). */
+export function speedAt(x: number, trackEndX: number, worldSpeedMult: number): number {
+  const progress = trackEndX > 0 ? Math.min(1, Math.max(0, x / trackEndX)) : 0;
+  return BASE_SPEED * worldSpeedMult * (1 + progress * MAX_PROGRESS_SPEED_BONUS);
+}
 export const GRAVITY = -20;
 export const JUMP_VY = 7.4;
 export const DOUBLE_JUMP_VY = 6.2;
@@ -48,6 +63,7 @@ export function createPhysics(startX: number): RunnerPhysics {
     jumpQueued: false,
     slideQueued: false,
     paused: false,
+    energy: 100,
     hitIds: new Set(),
     collectedIds: new Set(),
     completedGates: new Set(),

@@ -7,9 +7,10 @@ import { TrackDecor } from './TrackDecor';
 import { BossArena } from './BossArena';
 import type { Track, TrackGate } from './trackData';
 import type { WorldTheme } from './worldThemes';
+import { Chaser } from './Chaser';
 import {
   type RunnerPhysics,
-  BASE_SPEED,
+  speedAt,
   BOOST_SPEED_MULT,
   GRAVITY,
   JUMP_VY,
@@ -106,7 +107,7 @@ export function RunnerSceneContents({
 
       // --- forward movement ---
       if (p.boostTimer > 0) p.boostTimer = Math.max(0, p.boostTimer - dt);
-      const speed = BASE_SPEED * (p.boostTimer > 0 ? BOOST_SPEED_MULT : 1);
+      const speed = speedAt(p.x, track.trackEndX, theme.speedMult) * (p.boostTimer > 0 ? BOOST_SPEED_MULT : 1);
       p.x = Math.min(track.trackEndX, p.x + speed * dt);
 
       // --- obstacle collisions ---
@@ -185,6 +186,7 @@ export function RunnerSceneContents({
         totalHits={callbacks.bossTotalHits}
         defeated={callbacks.bossDefeated}
       />
+      <Chaser physicsRef={physicsRef} color={theme.chaser} />
       <PlayerAvatar ref={playerGroupRef} />
     </>
   );

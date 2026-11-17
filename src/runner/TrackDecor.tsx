@@ -46,6 +46,23 @@ export function TrackDecor({
 function ObstacleMesh({ obstacle, theme, hit }: { obstacle: TrackObstacle; theme: WorldTheme; hit: boolean }) {
   if (hit) return null;
   if (obstacle.kind === 'low') {
+    if (obstacle.variant === 'fire') {
+      // A ground-level fireball the chaser just lobbed at you — same jump
+      // dodge as a plain box, but reads as a live hazard the world is
+      // actively throwing, not just scenery to hop over.
+      return (
+        <group position={[obstacle.x, 0.5, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.42, 10, 10]} />
+            <meshStandardMaterial color="#ff6a2d" emissive="#ff8a3d" emissiveIntensity={1.1} />
+          </mesh>
+          <mesh scale={[1.35, 1.35, 1.35]}>
+            <sphereGeometry args={[0.42, 10, 10]} />
+            <meshStandardMaterial color="#ff6a2d" emissive="#ff4d1a" emissiveIntensity={0.5} transparent opacity={0.3} />
+          </mesh>
+        </group>
+      );
+    }
     return (
       <mesh position={[obstacle.x, 0.45, 0]} castShadow>
         <boxGeometry args={[0.7, 0.9, 1.6]} />
@@ -53,7 +70,8 @@ function ObstacleMesh({ obstacle, theme, hit }: { obstacle: TrackObstacle; theme
       </mesh>
     );
   }
-  // 'high' — an overhead bar on two side posts, with a gap to slide under.
+  // 'high' — an overhead bar (or fire-arc) on two side posts, with a gap
+  // to slide under.
   return (
     <group position={[obstacle.x, 0, 0]}>
       <mesh position={[0, -0.85, -0.7]}>
@@ -66,7 +84,11 @@ function ObstacleMesh({ obstacle, theme, hit }: { obstacle: TrackObstacle; theme
       </mesh>
       <mesh position={[0, 1.6, 0]}>
         <boxGeometry args={[0.2, 0.2, 1.7]} />
-        <meshStandardMaterial color="#e24d4d" emissive="#e24d4d" emissiveIntensity={0.3} />
+        <meshStandardMaterial
+          color={obstacle.variant === 'fire' ? '#ff6a2d' : '#e24d4d'}
+          emissive={obstacle.variant === 'fire' ? '#ff6a2d' : '#e24d4d'}
+          emissiveIntensity={obstacle.variant === 'fire' ? 0.9 : 0.3}
+        />
       </mesh>
     </group>
   );

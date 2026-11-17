@@ -107,6 +107,7 @@ export function RunnerGame({
     p.vy = 0;
     p.grounded = true;
     p.sliding = false;
+    p.energy = 100;
     setEnergy(100);
     showToast('Caught your breath — back to the last checkpoint.');
   }
@@ -119,6 +120,7 @@ export function RunnerGame({
     }
     setEnergy((e) => {
       const next = Math.max(0, e - 20);
+      physicsRef.current.energy = next;
       if (next <= 0) respawnAtCheckpoint();
       return next;
     });
@@ -237,7 +239,13 @@ export function RunnerGame({
         <BossChallengeOverlay
           boss={boss}
           hitIndex={bossHitIndex}
-          onWrong={() => setEnergy((e) => Math.max(10, e - 15))}
+          onWrong={() =>
+            setEnergy((e) => {
+              const next = Math.max(10, e - 15);
+              physicsRef.current.energy = next;
+              return next;
+            })
+          }
           onHit={() => {
             const next = bossHitIndex + 1;
             if (next >= boss.hits.length) {
