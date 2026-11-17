@@ -88,15 +88,17 @@
 .wm-worlds { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
 .world-banner {
-  background: linear-gradient(135deg, var(--world-accent-soft), rgba(10, 16, 28, 0.9) 55%);
-  border: 1px solid var(--world-accent-soft);
-  box-shadow: 0 0 22px var(--world-glow);
+  background:
+    linear-gradient(135deg, var(--world-accent-soft) 0%, var(--world-accent-2-soft) 42%, rgba(8, 13, 24, 0.94) 85%),
+    radial-gradient(ellipse at 100% 0%, var(--world-accent-2-soft), transparent 60%);
+  border: 1.5px solid var(--world-accent);
+  box-shadow: 0 0 26px var(--world-glow), inset 0 0 40px rgba(0, 0, 0, 0.25);
   border-radius: 18px;
   overflow: hidden;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
-.world-banner:hover { box-shadow: 0 0 30px var(--world-glow); }
-.world-status-coming_soon { opacity: 0.82; }
+.world-banner:hover { box-shadow: 0 0 38px var(--world-glow), inset 0 0 40px rgba(0, 0, 0, 0.2); }
+.world-status-coming_soon { opacity: 0.92; }
 
 .world-banner-header {
   width: 100%;
@@ -106,14 +108,14 @@
 }
 
 .world-emblem {
-  width: 56px; height: 56px; flex-shrink: 0; border-radius: 14px;
+  width: 60px; height: 60px; flex-shrink: 0; border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid var(--world-accent);
-  color: var(--world-accent);
-  box-shadow: 0 0 16px var(--world-glow) inset;
+  background: linear-gradient(135deg, var(--world-accent), var(--world-accent-2));
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  color: #0a1220;
+  box-shadow: 0 0 20px var(--world-glow), 0 4px 10px rgba(0, 0, 0, 0.35);
 }
-.world-emblem-icon { width: 34px; height: 34px; }
+.world-emblem-icon { width: 36px; height: 36px; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
 
 .world-banner-text { flex: 1 1 200px; min-width: 0; }
 .world-banner-name {
@@ -122,8 +124,9 @@
 }
 .world-status-pill {
   font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 800;
-  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--world-accent);
-  color: var(--world-accent); background: var(--world-accent-soft);
+  padding: 4px 10px; border-radius: 999px; border: 1px solid transparent;
+  color: #07131f; background: linear-gradient(120deg, var(--world-accent), var(--world-accent-2));
+  box-shadow: 0 0 10px var(--world-glow);
 }
 .world-banner-tagline { font-size: 0.84rem; color: #9cc7e8; margin-top: 3px; }
 
@@ -132,7 +135,11 @@
 .world-progress-track {
   width: 84px; height: 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden;
 }
-.world-progress-fill { display: block; height: 100%; background: var(--world-accent); border-radius: inherit; }
+.world-progress-fill {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--world-accent), var(--world-accent-2));
+  box-shadow: 0 0 8px var(--world-glow);
+}
 .world-chevron { transition: transform 0.15s ease; color: var(--world-accent); font-size: 1.1rem; }
 .world-chevron.open { transform: rotate(180deg); }
 
@@ -172,14 +179,16 @@
   padding: 4px 18px 10px;
 }
 .locked-mission-chip {
-  background: rgba(10, 16, 28, 0.6); border: 1px dashed rgba(255, 255, 255, 0.18);
-  border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 4px; opacity: 0.85;
+  background: linear-gradient(145deg, var(--world-accent-soft), rgba(10, 16, 28, 0.75));
+  border: 1px dashed var(--world-accent);
+  border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 4px; opacity: 0.95;
 }
-.locked-mission-icon { font-size: 1rem; opacity: 0.6; }
-.locked-mission-num { font-size: 0.68rem; color: #7fa8c7; font-weight: 700; }
-.locked-mission-topic { font-size: 0.82rem; color: #cfe4f5; line-height: 1.25; }
+.locked-mission-icon { font-size: 1rem; color: var(--world-accent); opacity: 0.9; }
+.locked-mission-num { font-size: 0.68rem; color: var(--world-accent); font-weight: 800; }
+.locked-mission-topic { font-size: 0.82rem; color: #eaf6ff; line-height: 1.25; font-weight: 600; }
 .locked-mission-tag {
-  font-size: 0.64rem; letter-spacing: 0.03em; text-transform: uppercase; color: #ffd166; font-weight: 700;
+  font-size: 0.64rem; letter-spacing: 0.03em; text-transform: uppercase; color: #ffd166; font-weight: 800;
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.5);
 }
 
 .world-not-built-note { margin: 0; padding: 0 18px 18px; color: #8fb3d4; font-size: 0.8rem; line-height: 1.45; }

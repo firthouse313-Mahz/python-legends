@@ -9,7 +9,9 @@ import type { ReactElement } from 'react';
 
 export interface WorldVisual {
   accent: string;
+  accent2: string;
   accentSoft: string;
+  accent2Soft: string;
   glow: string;
   Icon: (props: { className?: string }) => ReactElement;
 }
@@ -85,17 +87,42 @@ function BattleSwordsIcon({ className }: { className?: string }) {
 
 const DEFAULT_VISUAL: WorldVisual = {
   accent: '#5bc8f5',
-  accentSoft: 'rgba(91, 200, 245, 0.18)',
-  glow: 'rgba(91, 200, 245, 0.4)',
+  accent2: '#2563eb',
+  accentSoft: 'rgba(91, 200, 245, 0.34)',
+  accent2Soft: 'rgba(37, 99, 235, 0.22)',
+  glow: 'rgba(91, 200, 245, 0.55)',
   Icon: CastleIcon,
 };
 
+// Each world gets a two-tone gradient (not just a single faint tint) so the banners read as
+// distinct, saturated places rather than one dark card recolored five times — closer to the
+// reference mockup's painted castle/city/battle scenes, done with color instead of illustration.
 export const WORLD_VISUALS: Record<string, WorldVisual> = {
-  'world-1': { accent: '#34d399', accentSoft: 'rgba(52, 211, 153, 0.18)', glow: 'rgba(52, 211, 153, 0.4)', Icon: ForestIcon },
-  'world-2': { accent: '#38bdf8', accentSoft: 'rgba(56, 189, 248, 0.18)', glow: 'rgba(56, 189, 248, 0.4)', Icon: LoopCrownIcon },
-  'world-3': { accent: '#a855f7', accentSoft: 'rgba(168, 85, 247, 0.18)', glow: 'rgba(168, 85, 247, 0.4)', Icon: CastleIcon },
-  'world-4': { accent: '#10e0a0', accentSoft: 'rgba(16, 224, 160, 0.18)', glow: 'rgba(16, 224, 160, 0.4)', Icon: CitySkylineIcon },
-  'world-5': { accent: '#f97316', accentSoft: 'rgba(249, 115, 22, 0.18)', glow: 'rgba(249, 115, 22, 0.4)', Icon: BattleSwordsIcon },
+  'world-1': {
+    accent: '#34d399', accent2: '#a3e635',
+    accentSoft: 'rgba(52, 211, 153, 0.36)', accent2Soft: 'rgba(163, 230, 53, 0.2)',
+    glow: 'rgba(52, 211, 153, 0.6)', Icon: ForestIcon,
+  },
+  'world-2': {
+    accent: '#22d3ee', accent2: '#3b82f6',
+    accentSoft: 'rgba(34, 211, 238, 0.38)', accent2Soft: 'rgba(59, 130, 246, 0.24)',
+    glow: 'rgba(56, 189, 248, 0.6)', Icon: LoopCrownIcon,
+  },
+  'world-3': {
+    accent: '#a855f7', accent2: '#ec4899',
+    accentSoft: 'rgba(168, 85, 247, 0.36)', accent2Soft: 'rgba(236, 72, 153, 0.22)',
+    glow: 'rgba(192, 85, 247, 0.6)', Icon: CastleIcon,
+  },
+  'world-4': {
+    accent: '#10e0a0', accent2: '#06b6d4',
+    accentSoft: 'rgba(16, 224, 160, 0.36)', accent2Soft: 'rgba(6, 182, 212, 0.22)',
+    glow: 'rgba(16, 224, 160, 0.6)', Icon: CitySkylineIcon,
+  },
+  'world-5': {
+    accent: '#fb923c', accent2: '#ef4444',
+    accentSoft: 'rgba(251, 146, 60, 0.38)', accent2Soft: 'rgba(239, 68, 68, 0.24)',
+    glow: 'rgba(249, 115, 22, 0.6)', Icon: BattleSwordsIcon,
+  },
 };
 
 export function visualFor(worldId: string): WorldVisual {

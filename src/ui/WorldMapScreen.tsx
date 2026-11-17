@@ -105,7 +105,9 @@ function WorldBanner({
       style={
         {
           '--world-accent': visual.accent,
+          '--world-accent-2': visual.accent2,
           '--world-accent-soft': visual.accentSoft,
+          '--world-accent-2-soft': visual.accent2Soft,
           '--world-glow': visual.glow,
         } as React.CSSProperties
       }

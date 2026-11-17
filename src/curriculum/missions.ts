@@ -165,16 +165,16 @@ export const WORLD_1_MISSIONS: Mission[] = [
     story:
       'A variable is a named box that stores a value. Create a variable called name holding the text ' +
       '"Explorer" and a variable called level holding the number 4, then print a single greeting line ' +
-      'using an f-string: print(f"{name} reached level {level}")',
+      'by listing the pieces in one print(), separated by commas: print(name, "reached level", level)',
     starterCode:
       '# Create a variable called name holding the text "Explorer".\n' +
       '# Create a variable called level holding the number 4.\n' +
-      '# Then print exactly one line, using an f-string:\n' +
+      '# Then print exactly one line, using commas in print():\n' +
       '#   Explorer reached level 4\n\n',
     check(stdout) {
       const lines = linesOf(stdout);
       if (!lines.includes('Explorer reached level 4')) {
-        return 'Expected exactly: Explorer reached level 4 — check your variable names and the f-string.';
+        return 'Expected exactly: Explorer reached level 4 — check your variable names and the commas in print().';
       }
       return null;
     },
@@ -183,8 +183,8 @@ export const WORLD_1_MISSIONS: Mission[] = [
         'Bonus: Py-Guide left a nameplate generator running, but it crashes. A variable identifier has to ' +
         'match exactly everywhere you use it — find the mismatched name and fix it so the nameplate prints ' +
         'correctly.',
-      buggyCode: `student_name = "Explorer"\n\nprint(f"Hello, {student_nam}!")\n`,
-      hint: 'Compare the variable name where it’s created to the name used inside the f-string — one of them has a typo.',
+      buggyCode: `student_name = "Explorer"\n\nprint("Hello,", student_nam + "!")\n`,
+      hint: 'Compare the variable name where it’s created to the name used inside the print() statement — one of them has a typo.',
       check(stdout) {
         const lines = linesOf(stdout);
         if (!lines.includes('Hello, Explorer!')) {
@@ -237,13 +237,13 @@ export const WORLD_1_MISSIONS: Mission[] = [
     topic: 'input() statement',
     story:
       'Py-Guide wants to know your explorer name. Use input() to read it, then greet yourself by name: ' +
-      'print(f"Hello, {name}! Welcome to Python Village.") — the terminal supplies the typed answer ' +
+      'print("Hello,", name + "! Welcome to Python Village.") — the terminal supplies the typed answer ' +
       'automatically, and will quietly test your code with a different name too.',
     starterCode:
       "# Read the explorer's name with input(), then print exactly:\n" +
       '#   Hello, <name>! Welcome to Python Village.\n' +
-      '# using an f-string. The terminal will test your code with more than\n' +
-      '# one name, so don’t hard-code "Explorer" — actually use input().\n\n',
+      '# using a comma in print(). The terminal will test your code with more\n' +
+      '# than one name, so don’t hard-code "Explorer" — actually use input().\n\n',
     providedInputs: ['Explorer'],
     // Hidden case: a different name. A solution that hard-codes "Explorer"
     // instead of genuinely using input() will pass the visible case but
