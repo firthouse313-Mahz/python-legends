@@ -40,6 +40,34 @@ real live endpoint. The logic is sound and type-checked, but a real
 login + cross-device resume should be tried once deployed, since this
 specific path couldn't be exercised end-to-end here.
 
+## World Map: adventure-game redesign
+
+The World Map (what students land on after logging in) is reskinned as a
+dark-navy, neon-glow adventure hub instead of a plain card grid:
+
+- A sidebar with Explore / My Progress / Settings nav, a small original
+  robot mascot, and a "Leaderboard" / "Help" nav item shown honestly as
+  **Soon** rather than built and empty.
+- One color + inline-SVG emblem per world: Python Forest green, Loop
+  Kingdom blue, Function Castle purple, Data Structure City green-teal,
+  The Coding Battle orange (`src/ui/worldMapTheme.tsx`).
+- Worlds that aren't built yet show each planned topic as its own dashed
+  **locked-mission chip** ("🔒 #13 Functions — COMING SOON") instead of one
+  block of explanatory text.
+- Settings folds in the account chip (name + log out), the mute toggle,
+  and the CS/IP pathway toggle that used to float as a separate corner
+  widget.
+
+This is presentation only — `src/ui/WorldMapScreen.tsx` and
+`src/ui/world-map.css` were rewritten, but `progressService`, the mission
+data, and the level-unlock logic were **not touched**. Verified two ways:
+a Playwright run that logs in, hydrates real progress, plays a mission to
+completion, and confirms exactly one `plsave` fires with the right
+snapshot (same test used for the accounts feature above, rerun against
+the new screen); and screenshots of the Explore, locked-topics, My
+Progress, and Settings views at both a 1280px desktop width and a 390px
+mobile width.
+
 ## Status: World 1 + World 2 live on the continuous-runner engine
 ## (milestone 5 of the adventure-game brief, in progress)
 
