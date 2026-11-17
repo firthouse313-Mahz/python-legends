@@ -1,14 +1,23 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { BOSS_ARENA_X } from './trackData';
 
 /**
- * The Variable Monster — a simple original low-poly creature (no
+ * The world's boss monster — a simple original low-poly creature (no
  * external assets), built from primitives, that lumbers and reacts when
- * hit. `hitsLanded` (0-3) drives its health and a defeat animation.
+ * hit. `hitsLanded` drives its health and a defeat animation.
  */
-export function BossArena({ hitsLanded, defeated }: { hitsLanded: number; defeated: boolean }) {
+export function BossArena({
+  x,
+  hitsLanded,
+  totalHits,
+  defeated,
+}: {
+  x: number;
+  hitsLanded: number;
+  totalHits: number;
+  defeated: boolean;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
 
@@ -28,11 +37,11 @@ export function BossArena({ hitsLanded, defeated }: { hitsLanded: number; defeat
     }
   });
 
-  const health = Math.max(0, 3 - hitsLanded);
-  const color = health === 3 ? '#9b3bd6' : health === 2 ? '#c74a8f' : '#e26a5a';
+  const health = Math.max(0, totalHits - hitsLanded);
+  const color = health >= totalHits ? '#9b3bd6' : health > totalHits / 2 ? '#c74a8f' : '#e26a5a';
 
   return (
-    <group position={[BOSS_ARENA_X, 0, -1]}>
+    <group position={[x, 0, -1]}>
       <group ref={groupRef}>
         <mesh ref={bodyRef} position={[0, 1.4, 0]} castShadow>
           <icosahedronGeometry args={[1.3, 0]} />

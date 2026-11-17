@@ -2,55 +2,72 @@
 
 A continuous auto-running 3D platformer where students write and run **real
 Python** (via Pyodide — actual CPython compiled to WebAssembly, never
-simulated or hard-coded output) to progress through "Python Forest," World 1
-of a 5-world curriculum. Built with React + TypeScript + Vite.
+simulated or hard-coded output) to progress through a 5-world curriculum,
+starting with "Python Forest" (World 1) and "Loop Kingdom" (World 2). Built
+with React + TypeScript + Vite.
 
 This is a separate project from the main DigiClass platform, linked from its
 "Digi Game" nav card. SQL is planned as a separate, future game and is out
 of scope here.
 
-## Status: continuous-runner rebuild of World 1 (milestone 2-4 of the
-## adventure-game brief)
+## Status: World 1 + World 2 live on the continuous-runner engine
+## (milestone 5 of the adventure-game brief, in progress)
 
 **Big architecture change:** the game was rebuilt from a free-roam
 third-person Babylon.js explorer (walk around, talk to an NPC, walk up to a
 terminal) into a **continuous auto-scrolling platformer** on **React Three
 Fiber** (`src/runner/`), per the "PLAY. EXPLORE. CODE. CONQUER." brief. The
-player auto-runs forward; jump and slide clear obstacles; the same 7 real,
-already-built World-1 Python missions now sit as glowing "gates" along the
-track that pause the run until solved, then the run continues automatically
-— no trip back to the World Map between challenges. A boss fight (**The
-Variable Monster**) closes out the world. The old Babylon.js free-roam
-engine (`src/game/`) is kept in the repo, unused, in case anything from it
-is needed again — nothing was deleted.
+player auto-runs forward; jump and slide clear obstacles; each world's real
+Python missions sit as glowing "gates" along the track that pause the run
+until solved, then the run continues automatically — no trip back to the
+World Map between challenges. A boss fight closes out each world. The old
+Babylon.js free-roam engine (`src/game/`) is kept in the repo, unused, in
+case anything from it is needed again — nothing was deleted.
 
-World 1 is renamed **"Python Forest"** and Worlds 2-5 are renamed/regrouped
-to **Loop Kingdom, Function Castle, Data Structure City, and The Coding
-Battle** (`src/curriculum/worlds.ts`), matching the new brief; each also now
+The runner engine itself is now **world-generic** (`src/runner/trackData.ts`,
+`worldThemes.ts`, `bossChallenges.ts`, `RunnerGame.tsx` all key off
+`world.id`), so bringing up a new world is now a content exercise — new
+missions + a new boss — rather than new engine code. World 1 proved the
+pattern; World 2 is the first world built on top of the generalized engine.
+
+World 1 is **"Python Forest"** and Worlds 2-5 are renamed/regrouped to
+**Loop Kingdom, Function Castle, Data Structure City, and The Coding
+Battle** (`src/curriculum/worlds.ts`), matching the new brief; each also
 records its boss name (Infinite Loop Dragon, The Return Wizard, The Data
-Destroyer, The Master Debugger) for when their real content is built.
-Worlds 2-5 still have **zero real content** — same honest "coming soon" data
-as before, now just relabeled.
+Destroyer, The Master Debugger). Worlds 3-5 still have **zero real
+content** — honest "coming soon" data, same as before.
 
-### What's real in the new runner (verified with Playwright, no mocked data)
+### What's real in the runner (verified with Playwright, no mocked data)
 
 - **Continuous auto-run** down a track (`src/runner/trackData.ts`): no
   steering needed, just forward momentum; jump (+ a double jump) and slide
-  clear ground/overhead obstacles.
-- **All 7 real World-1 missions** (unchanged content, unchanged Pyodide
-  checking logic, unchanged `PythonLabOverlay`) sit as sequential gates.
-  Verified end-to-end: a full run solves all 7 with real typed Python,
-  auto-continues after each one with zero trips to the map, then the boss
-  fight triggers automatically.
-- **Boss fight:** 3 "predict the output" hits on The Variable Monster;
-  wrong answers cost energy and the question stays up to retry (never a
-  hard fail); defeating it awards a bonus and marks World 1 complete.
+  clear ground/overhead obstacles. Each world gets its own color theme
+  (`src/runner/worldThemes.ts`) — World 1's forest greens, World 2's
+  Loop Kingdom dusk purples.
+- **World 1 — Python Forest:** all 7 real missions (unchanged content,
+  unchanged Pyodide checking logic, unchanged `PythonLabOverlay`) sit as
+  sequential gates. Verified end-to-end: a full run solves all 7 with real
+  typed Python, auto-continues after each one with zero trips to the map,
+  then the boss fight (**The Variable Monster**, 3 predict-the-output hits)
+  triggers automatically and marks the world complete.
+- **World 2 — Loop Kingdom:** 4 new real missions covering `for` loops,
+  `while` loops, nested loops, and `range()` (`src/curriculum/missions.ts`,
+  `WORLD_2_MISSIONS`) — genuinely checked by the same Pyodide pipeline, not
+  fixed-answer matching. Verified end-to-end: all 4 gates solved with real
+  typed Python (for-loop range printing, a while-loop countdown, a nested
+  loop printing a 3×3 grid, and a list-comprehension-style squares loop),
+  then the boss fight (**The Infinite Loop Dragon**, 3 loop-themed
+  predict-the-output hits) triggers and marks the world complete.
+- **Boss fights:** 3 "predict the output" hits per world; wrong answers
+  cost energy and the question stays up to retry (never a hard fail);
+  defeating the boss awards a bonus and marks that world complete.
 - **Energy, coins, XP, shield/boost power-ups:** hitting an obstacle costs
   energy (or is absorbed by a collected shield); energy hitting 0 respawns
   the student at their last cleared gate, not all the way from zero.
 - **Checkpoint/resume:** leaving and coming back resumes the run just past
   the furthest level already completed (derived from the same
-  `progressService` save data as before — no new save schema needed).
+  `progressService` save data as before — no new save schema needed), for
+  either world.
 - **Desktop + touch:** Space/↑ to jump, ↓ to slide, or on-screen JUMP/SLIDE
   buttons on touch devices; verified on a mobile viewport.
 - **Sound, mute toggle, pause menu:** reused from the existing `src/audio/sfx.ts`
@@ -58,9 +75,8 @@ as before, now just relabeled.
 
 ### What's not built yet
 
-- **Worlds 2-5 have no real scenes or missions** — still just honest
-  placeholder topic/boss-name data, same limitation as before, now
-  reflecting the brief's new world names.
+- **Worlds 3-5 have no real scenes or missions** — still just honest
+  placeholder topic/boss-name data, same limitation as before.
 - **Parallax is a simple 3-layer recycling effect**, not hand-painted art
   (no external image assets are fetchable in this environment).
 - **No lives system** — only the energy/respawn-to-checkpoint loop described

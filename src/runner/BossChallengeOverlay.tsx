@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { BOSS_CHALLENGES, BOSS_NAME } from './bossChallenges';
+import type { WorldBoss } from './bossChallenges';
 import { sfx } from '../audio/sfx';
 import './runner.css';
 
 export function BossChallengeOverlay({
+  boss,
   hitIndex,
   onHit,
   onWrong,
 }: {
+  boss: WorldBoss;
   hitIndex: number;
   onHit: () => void;
   onWrong: () => void;
 }) {
-  const challenge = BOSS_CHALLENGES[hitIndex];
+  const challenge = boss.hits[hitIndex];
   const [choice, setChoice] = useState<number | null>(null);
   const [wrongTry, setWrongTry] = useState(false);
 
@@ -37,7 +39,7 @@ export function BossChallengeOverlay({
   return (
     <div className="boss-overlay" data-ui>
       <div className="boss-panel">
-        <h2>⚔️ {BOSS_NAME} — Hit {hitIndex + 1} of 3</h2>
+        <h2>⚔️ {boss.name} — Hit {hitIndex + 1} of {boss.hits.length}</h2>
         <p className="boss-prompt">{challenge.prompt}</p>
         <pre className="boss-snippet">{challenge.snippet}</pre>
         <div className="boss-options">

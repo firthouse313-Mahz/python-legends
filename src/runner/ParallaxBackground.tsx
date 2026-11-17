@@ -2,13 +2,21 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { RunnerPhysics } from './physics';
+import type { WorldTheme } from './worldThemes';
 
 /**
  * Three looping background layers at different depths/speeds for a cheap
  * parallax effect — no texture images (none can be fetched in this
  * sandbox), just colored primitives recycled along X as the player runs.
+ * Colored per-world from `theme` so each world has its own identity.
  */
-export function ParallaxBackground({ physicsRef }: { physicsRef: React.RefObject<RunnerPhysics> }) {
+export function ParallaxBackground({
+  physicsRef,
+  theme,
+}: {
+  physicsRef: React.RefObject<RunnerPhysics>;
+  theme: WorldTheme;
+}) {
   const farRef = useRef<THREE.Group>(null);
   const midRef = useRef<THREE.Group>(null);
   const nearRef = useRef<THREE.Group>(null);
@@ -28,13 +36,13 @@ export function ParallaxBackground({ physicsRef }: { physicsRef: React.RefObject
     <>
       <mesh position={[0, 6, -40]}>
         <planeGeometry args={[400, 40]} />
-        <meshBasicMaterial color="#8fe3ff" />
+        <meshBasicMaterial color={theme.sky} />
       </mesh>
       <group ref={farRef} position={[0, 0, -30]}>
         {farHills.map((x, i) => (
           <mesh key={i} position={[x, -2, 0]}>
             <sphereGeometry args={[9, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="#4fae7a" />
+            <meshStandardMaterial color={theme.hill} />
           </mesh>
         ))}
       </group>
@@ -43,7 +51,7 @@ export function ParallaxBackground({ physicsRef }: { physicsRef: React.RefObject
           <group key={i} position={[x, 0, (i % 2) * 2 - 1]}>
             <mesh position={[0, 1.6, 0]}>
               <coneGeometry args={[1.4, 3.2, 7]} />
-              <meshStandardMaterial color="#2f8f52" />
+              <meshStandardMaterial color={theme.tree} />
             </mesh>
             <mesh position={[0, 0.3, 0]}>
               <cylinderGeometry args={[0.25, 0.3, 0.7, 6]} />

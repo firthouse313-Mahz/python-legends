@@ -81,12 +81,12 @@ export const WORLDS: WorldDef[] = [
     tagline: 'Master the loops that repeat your way to victory.',
     difficulty: 'Foundation',
     bossName: 'The Infinite Loop Dragon',
-    implemented: false,
+    implemented: true,
     levels: [
-      { id: 'w2-l1', worldId: 'world-2', localNumber: 1, globalNumber: 9, topic: 'for loops', pathway: 'common', implemented: false },
-      { id: 'w2-l2', worldId: 'world-2', localNumber: 2, globalNumber: 10, topic: 'while loops', pathway: 'common', implemented: false },
-      { id: 'w2-l3', worldId: 'world-2', localNumber: 3, globalNumber: 11, topic: 'Nested loops', pathway: 'common', implemented: false },
-      { id: 'w2-l4', worldId: 'world-2', localNumber: 4, globalNumber: 12, topic: 'range() function', pathway: 'common', implemented: false },
+      { id: 'w2-l1', worldId: 'world-2', localNumber: 1, globalNumber: 9, topic: 'for loops', pathway: 'common', implemented: true, missionId: 'w2-l1' },
+      { id: 'w2-l2', worldId: 'world-2', localNumber: 2, globalNumber: 10, topic: 'while loops', pathway: 'common', implemented: true, missionId: 'w2-l2' },
+      { id: 'w2-l3', worldId: 'world-2', localNumber: 3, globalNumber: 11, topic: 'Nested loops', pathway: 'common', implemented: true, missionId: 'w2-l3' },
+      { id: 'w2-l4', worldId: 'world-2', localNumber: 4, globalNumber: 12, topic: 'range() function', pathway: 'common', implemented: true, missionId: 'w2-l4' },
     ],
   },
   {

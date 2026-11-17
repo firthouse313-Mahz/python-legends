@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { RunnerSceneContents } from './RunnerSceneContents';
 import { RunnerControls } from './runnerControls';
 import { createPhysics } from './physics';
-import { GATES, startXForCompletedLevels, type TrackGate } from './trackData';
+import { buildTrack, startXForCompletedLevels, type TrackGate } from './trackData';
+import { themeFor } from './worldThemes';
+import { BOSSES } from './bossChallenges';
 import { getMission } from '../curriculum/missions';
+import type { WorldDef } from '../curriculum/worlds';
 import { progressService } from '../progress/progressService';
 import { PyodideRunner } from '../python-lab/PyodideRunner';
 import { PythonLabOverlay } from '../python-lab/PythonLabOverlay';
@@ -17,12 +20,30 @@ function isTouchDevice() {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onBackToMap: () => void }) {
+export function RunnerGame({
+  world,
+  runner,
+  onBackToMap,
+}: {
+  world: WorldDef;
+  runner: PyodideRunner;
+  onBackToMap: () => void;
+}) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<RunnerControls | null>(null);
 
-  const completedLevelIds = GATES.filter((g) => progressService.isCompleted(g.levelId)).map((g) => g.levelId);
-  const startX = useRef(startXForCompletedLevels(completedLevelIds)).current;
+  const theme = useMemo(() => themeFor(world.id), [world.id]);
+  const boss = BOSSES[world.id] ?? BOSSES['world-1'];
+  const bonusId = `${world.id}-boss`;
+
+  const playableLevelIds = useMemo(
+    () => world.levels.filter((l) => l.implemented && l.missionId).map((l) => l.id),
+    [world],
+  );
+  const track = useMemo(() => buildTrack(playableLevelIds), [playableLevelIds]);
+
+  const completedLevelIds = track.gates.filter((g) => progressService.isCompleted(g.levelId)).map((g) => g.levelId);
+  const startX = useRef(startXForCompletedLevels(track.gates, completedLevelIds)).current;
   const physicsRef = useRef(createPhysics(startX));
   const lastCheckpointXRef = useRef(startX);
   if (physicsRef.current.completedGates.size === 0) {
@@ -40,7 +61,7 @@ export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onB
   const [xp, setXp] = useState(() => progressService.getTotalXp());
   const [activeGate, setActiveGate] = useState<TrackGate | null>(null);
   const [bossPhase, setBossPhase] = useState<'none' | 'fighting' | 'defeated'>(
-    progressService.isBonusCompleted('w1-boss') ? 'defeated' : 'none',
+    progressService.isBonusCompleted(bonusId) ? 'defeated' : 'none',
   );
   const [bossHitIndex, setBossHitIndex] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
@@ -131,6 +152,8 @@ export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onB
     <div className="runner-root" ref={canvasWrapRef}>
       <Canvas shadows camera={{ fov: 55, near: 0.1, far: 500 }}>
         <RunnerSceneContents
+          track={track}
+          theme={theme}
           physicsRef={physicsRef}
           controls={controls}
           callbacks={{
@@ -141,6 +164,7 @@ export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onB
             onDepleted: () => {},
             onTouchdown: () => {},
             bossHitsLanded: bossHitIndex,
+            bossTotalHits: boss.hits.length,
             bossDefeated: bossPhase === 'defeated',
           }}
         />
@@ -169,8 +193,8 @@ export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onB
           <span className="runner-energy-label">{energy}</span>
         </div>
         <div className="runner-progress" data-ui>
-          {GATES.filter((g) => physicsRef.current.completedGates.has(g.levelId)).length} / {GATES.length} levels
-          {bossPhase === 'defeated' ? ' — World 1 complete! 🏆' : ''}
+          {track.gates.filter((g) => physicsRef.current.completedGates.has(g.levelId)).length} / {track.gates.length} levels
+          {bossPhase === 'defeated' ? ` — ${world.name} complete! 🏆` : ''}
         </div>
       </div>
 
@@ -211,16 +235,17 @@ export function RunnerGame({ runner, onBackToMap }: { runner: PyodideRunner; onB
 
       {bossPhase === 'fighting' && (
         <BossChallengeOverlay
+          boss={boss}
           hitIndex={bossHitIndex}
           onWrong={() => setEnergy((e) => Math.max(10, e - 15))}
           onHit={() => {
             const next = bossHitIndex + 1;
-            if (next >= 3) {
-              progressService.completeBonus('w1-boss', 100, 20);
+            if (next >= boss.hits.length) {
+              progressService.completeBonus(bonusId, 100, 20);
               setXp((x) => x + 100);
               setCoins((c) => c + 20);
               setBossPhase('defeated');
-              showToast('🏆 The Variable Monster is defeated! World 1 complete!', 4000);
+              showToast(`🏆 ${boss.name} is defeated! ${world.name} complete!`, 4000);
             } else {
               setBossHitIndex(next);
             }

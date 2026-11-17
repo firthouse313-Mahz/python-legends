@@ -1,4 +1,5 @@
-import { OBSTACLES, COLLECTIBLES, GATES, type TrackObstacle, type TrackCollectible, type TrackGate } from './trackData';
+import type { TrackObstacle, TrackCollectible, TrackGate, Track } from './trackData';
+import type { WorldTheme } from './worldThemes';
 
 /**
  * Static visuals for every obstacle, collectible and gate along the
@@ -8,43 +9,47 @@ import { OBSTACLES, COLLECTIBLES, GATES, type TrackObstacle, type TrackCollectib
  * even though the player's own movement is driven imperatively.
  */
 export function TrackDecor({
+  track,
+  theme,
   hitIds,
   collectedIds,
   completedGates,
 }: {
+  track: Track;
+  theme: WorldTheme;
   hitIds: Set<string>;
   collectedIds: Set<string>;
   completedGates: Set<string>;
 }) {
   return (
     <>
-      {OBSTACLES.map((o) => (
-        <ObstacleMesh key={o.id} obstacle={o} hit={hitIds.has(o.id)} />
+      {track.obstacles.map((o) => (
+        <ObstacleMesh key={o.id} obstacle={o} theme={theme} hit={hitIds.has(o.id)} />
       ))}
-      {COLLECTIBLES.map((c) => (
+      {track.collectibles.map((c) => (
         <CollectibleMesh key={c.id} collectible={c} collected={collectedIds.has(c.id)} />
       ))}
-      {GATES.map((g) => (
-        <GateMesh key={g.id} gate={g} completed={completedGates.has(g.levelId)} />
+      {track.gates.map((g) => (
+        <GateMesh key={g.id} gate={g} theme={theme} completed={completedGates.has(g.levelId)} />
       ))}
       {/* The running path itself — wide in Z so it fills the angled camera
           view all the way to the horizon; Z never factors into collision,
           so there's no cost to making it generous. */}
       <mesh position={[400, -0.05, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1600, 80]} />
-        <meshStandardMaterial color="#3f8f52" />
+        <meshStandardMaterial color={theme.ground} />
       </mesh>
     </>
   );
 }
 
-function ObstacleMesh({ obstacle, hit }: { obstacle: TrackObstacle; hit: boolean }) {
+function ObstacleMesh({ obstacle, theme, hit }: { obstacle: TrackObstacle; theme: WorldTheme; hit: boolean }) {
   if (hit) return null;
   if (obstacle.kind === 'low') {
     return (
       <mesh position={[obstacle.x, 0.45, 0]} castShadow>
         <boxGeometry args={[0.7, 0.9, 1.6]} />
-        <meshStandardMaterial color="#c97a3a" />
+        <meshStandardMaterial color={theme.obstacle} />
       </mesh>
     );
   }
@@ -93,8 +98,8 @@ function CollectibleMesh({ collectible, collected }: { collectible: TrackCollect
   );
 }
 
-function GateMesh({ gate, completed }: { gate: TrackGate; completed: boolean }) {
-  const color = completed ? '#4dffb0' : '#8a5bff';
+function GateMesh({ gate, theme, completed }: { gate: TrackGate; theme: WorldTheme; completed: boolean }) {
+  const color = completed ? '#4dffb0' : theme.gate;
   return (
     <group position={[gate.x, 0, 0]}>
       <mesh position={[-1, 1.1, 0]}>

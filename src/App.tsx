@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GameScene } from './game/engine/GameScene';
 import { getMission } from './curriculum/missions';
 import { ENERGY_CHALLENGES } from './curriculum/energyChallenges';
-import { getNextPlayableLevel, type LevelDef } from './curriculum/worlds';
+import { getNextPlayableLevel, getWorld, type LevelDef } from './curriculum/worlds';
 import { progressService } from './progress/progressService';
 import { PyodideRunner } from './python-lab/PyodideRunner';
 import { PythonLabOverlay } from './python-lab/PythonLabOverlay';
@@ -76,13 +76,15 @@ export default function App() {
     setMuted(sfx.toggleMute());
   }
 
-  // World 1 ("Python Forest") now runs on the new continuous
+  // Every implemented world now runs on the new continuous
   // React-Three-Fiber runner engine (src/runner/) instead of the old
-  // Babylon.js free-roam village — see RunnerGame below. This effect only
-  // builds the old Babylon scene for a level outside World 1, which isn't
-  // reachable yet since no other world has real content; the old engine
-  // is kept, just unused, in case it's needed again.
-  const isRunnerWorld = activeLevel?.worldId === 'world-1';
+  // Babylon.js free-roam village — see RunnerGame below. The Babylon path
+  // below is only reachable for a level whose world isn't implemented,
+  // which can't happen (handlePlayLevel already requires a real mission);
+  // the old engine is kept in the repo, just unused, in case it's needed
+  // again.
+  const activeWorld = activeLevel ? getWorld(activeLevel.worldId) : undefined;
+  const isRunnerWorld = !!activeWorld?.implemented;
 
   useEffect(() => {
     if (screen !== 'game' || !activeLevel || !canvasRef.current || isRunnerWorld) return;
@@ -185,8 +187,8 @@ export default function App() {
     return <WorldMapScreen onPlayLevel={handlePlayLevel} />;
   }
 
-  if (isRunnerWorld && runnerRef.current) {
-    return <RunnerGame runner={runnerRef.current} onBackToMap={handleBackToMap} />;
+  if (isRunnerWorld && activeWorld && runnerRef.current) {
+    return <RunnerGame key={activeWorld.id} world={activeWorld} runner={runnerRef.current} onBackToMap={handleBackToMap} />;
   }
 
   const mission = activeLevel?.missionId ? getMission(activeLevel.missionId) : undefined;

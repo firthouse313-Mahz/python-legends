@@ -294,6 +294,127 @@ export const WORLD_1_MISSIONS: Mission[] = [
   },
 ];
 
+// World 2 (Loop Kingdom) — for loops, while loops, nested loops, and
+// range(). Same rules as World 1: every mission runs genuine student code
+// through Pyodide, checks that require the actual loop construct (not
+// just a hard-coded print of the expected output), and a predict
+// question before the editor on the first level.
+
+export const WORLD_2_MISSIONS: Mission[] = [
+  {
+    id: 'w2-l1',
+    title: 'The Counting Gate',
+    topic: 'for loops',
+    story:
+      'The gate into Loop Kingdom only opens for a real for loop — no copy-pasted print() calls allowed. ' +
+      'Use a for loop with range() to print the numbers 1 through 5, one per line.',
+    starterCode:
+      '# Use a for loop with range() to print the numbers 1, 2, 3, 4, 5 — one per line.\n' +
+      '# range(1, 6) gives you 1, 2, 3, 4, 5 (range stops BEFORE its second number).\n\n',
+    predict: {
+      prompt: 'Before you touch the gate, predict what this snippet prints:',
+      snippet: 'for i in range(3):\n    print(i)',
+      options: ['1 2 3', '0 1 2', '0 1 2 3', 'Just 3'],
+      correctIndex: 1,
+      explanation: 'range(3) counts from 0 up to (but not including) 3 — so it produces 0, 1, 2.',
+    },
+    check(stdout, code) {
+      if (!/\bfor\b/.test(code)) {
+        return "The gate didn't sense a real loop — use a for loop (for ... in range(...)), not separate print() calls.";
+      }
+      const lines = linesOf(stdout);
+      const expected = ['1', '2', '3', '4', '5'];
+      if (lines.join(',') !== expected.join(',')) {
+        return `The gate expected exactly 1, 2, 3, 4, 5 — one per line (got: ${lines.join(', ') || 'nothing'}).`;
+      }
+      return null;
+    },
+    rewardXp: 25,
+    rewardCoins: 4,
+  },
+  {
+    id: 'w2-l2',
+    title: 'The Countdown Tower',
+    topic: 'while loops',
+    story:
+      "The tower's launch sequence needs a while loop — it keeps going as long as a condition is true, " +
+      'not a fixed number of times. Starting from 5, print each number counting down to 1, then print ' +
+      '"Liftoff!" once the countdown reaches 0.',
+    starterCode:
+      '# Use a while loop: start a variable at 5, print it, then subtract 1 each\n' +
+      '# time, stopping once it would go below 1. After the loop, print exactly:\n' +
+      '#   Liftoff!\n\n',
+    check(stdout, code) {
+      if (!/\bwhile\b/.test(code)) {
+        return "The tower didn't detect a while loop — use while, not a for loop or repeated print() calls.";
+      }
+      const lines = linesOf(stdout);
+      const expected = ['5', '4', '3', '2', '1', 'Liftoff!'];
+      if (lines.join(',') !== expected.join(',')) {
+        return `The tower expected 5, 4, 3, 2, 1, then Liftoff! — one per line (got: ${lines.join(', ') || 'nothing'}).`;
+      }
+      return null;
+    },
+    rewardXp: 25,
+    rewardCoins: 4,
+  },
+  {
+    id: 'w2-l3',
+    title: 'The Grid Chamber',
+    topic: 'Nested loops',
+    story:
+      'The chamber floor is a 3×3 grid of tiles. A loop inside another loop — a nested loop — lets you ' +
+      'visit every tile: the outer loop picks the row, the inner loop walks across its columns. ' +
+      'Print a 3×3 grid of asterisks: 3 lines, each with 3 "*" characters separated by a space ' +
+      '(e.g. "* * *").',
+    starterCode:
+      '# Use a nested loop (a for loop inside another for loop) to print 3 lines,\n' +
+      '# each containing "* * *" (three asterisks separated by single spaces).\n' +
+      '# Hint: print(..., end="") lets you print on the same line without a\n' +
+      "# newline, and print() with no arguments ends that line.\n\n",
+    check(stdout, code) {
+      const forCount = (code.match(/\bfor\b/g) ?? []).length;
+      if (forCount < 2) {
+        return 'The chamber needs a loop INSIDE a loop — one for loop nested inside another, not just one.';
+      }
+      const lines = linesOf(stdout);
+      if (lines.length !== 3 || !lines.every((l) => l.replace(/\s+/g, ' ').trim() === '* * *')) {
+        return `The chamber floor expected exactly 3 lines of "* * *" (got ${lines.length} line(s): ${lines.join(' | ') || 'nothing'}).`;
+      }
+      return null;
+    },
+    rewardXp: 30,
+    rewardCoins: 5,
+  },
+  {
+    id: 'w2-l4',
+    title: "The Range Keeper's Puzzle",
+    topic: 'range() function',
+    story:
+      "range() can take a start, a stop, and even a step. The Keeper's puzzle wants the squares of the " +
+      'numbers 0 through 4 (that is, 0*0, 1*1, 2*2, 3*3, 4*4), one per line, using range() to generate ' +
+      'those numbers rather than writing them out by hand.',
+    starterCode:
+      '# Use range() in a for loop to get the numbers 0, 1, 2, 3, 4, and for each\n' +
+      '# one print its square (the number multiplied by itself): 0, 1, 4, 9, 16.\n\n',
+    check(stdout, code) {
+      if (!/\brange\s*\(/.test(code)) {
+        return "The Keeper didn't see a range() call — generate the numbers with range(), don't hard-code them.";
+      }
+      const lines = linesOf(stdout);
+      const expected = ['0', '1', '4', '9', '16'];
+      if (lines.join(',') !== expected.join(',')) {
+        return `The puzzle expected the squares 0, 1, 4, 9, 16 — one per line (got: ${lines.join(', ') || 'nothing'}).`;
+      }
+      return null;
+    },
+    rewardXp: 30,
+    rewardCoins: 5,
+  },
+];
+
+const ALL_MISSIONS: Mission[] = [...WORLD_1_MISSIONS, ...WORLD_2_MISSIONS];
+
 export function getMission(missionId: string): Mission | undefined {
-  return WORLD_1_MISSIONS.find((m) => m.id === missionId);
+  return ALL_MISSIONS.find((m) => m.id === missionId);
 }

@@ -5,7 +5,8 @@ import { PlayerAvatar } from './PlayerAvatar';
 import { ParallaxBackground } from './ParallaxBackground';
 import { TrackDecor } from './TrackDecor';
 import { BossArena } from './BossArena';
-import { OBSTACLES, COLLECTIBLES, GATES, BOSS_ARENA_X, TRACK_END_X, type TrackGate } from './trackData';
+import type { Track, TrackGate } from './trackData';
+import type { WorldTheme } from './worldThemes';
 import {
   type RunnerPhysics,
   BASE_SPEED,
@@ -28,14 +29,19 @@ export interface RunnerSceneCallbacks {
   onDepleted: () => void;
   onTouchdown: () => void;
   bossHitsLanded: number;
+  bossTotalHits: number;
   bossDefeated: boolean;
 }
 
 export function RunnerSceneContents({
+  track,
+  theme,
   physicsRef,
   controls,
   callbacks,
 }: {
+  track: Track;
+  theme: WorldTheme;
   physicsRef: React.RefObject<RunnerPhysics>;
   controls: RunnerControls;
   callbacks: RunnerSceneCallbacks;
@@ -101,10 +107,10 @@ export function RunnerSceneContents({
       // --- forward movement ---
       if (p.boostTimer > 0) p.boostTimer = Math.max(0, p.boostTimer - dt);
       const speed = BASE_SPEED * (p.boostTimer > 0 ? BOOST_SPEED_MULT : 1);
-      p.x = Math.min(TRACK_END_X, p.x + speed * dt);
+      p.x = Math.min(track.trackEndX, p.x + speed * dt);
 
       // --- obstacle collisions ---
-      for (const o of OBSTACLES) {
+      for (const o of track.obstacles) {
         if (p.hitIds.has(o.id)) continue;
         if (Math.abs(o.x - p.x) > OBSTACLE_HIT_RADIUS) continue;
         const cleared = o.kind === 'low' ? p.y >= JUMP_CLEAR_Y : p.sliding;
@@ -121,7 +127,7 @@ export function RunnerSceneContents({
       }
 
       // --- collectibles ---
-      for (const c of COLLECTIBLES) {
+      for (const c of track.collectibles) {
         if (p.collectedIds.has(c.id)) continue;
         if (Math.abs(c.x - p.x) > COLLECT_RADIUS) continue;
         p.collectedIds.add(c.id);
@@ -131,7 +137,7 @@ export function RunnerSceneContents({
       }
 
       // --- gates ---
-      for (const gate of GATES) {
+      for (const gate of track.gates) {
         if (p.completedGates.has(gate.levelId)) continue;
         if (p.x >= gate.x - 1.3) {
           p.x = gate.x - 1.3;
@@ -142,8 +148,8 @@ export function RunnerSceneContents({
       }
 
       // --- boss arena ---
-      if (!p.paused && p.completedGates.size >= GATES.length && !callbacks.bossDefeated && p.x >= BOSS_ARENA_X - 3) {
-        p.x = BOSS_ARENA_X - 3;
+      if (!p.paused && p.completedGates.size >= track.gates.length && !callbacks.bossDefeated && p.x >= track.bossArenaX - 3) {
+        p.x = track.bossArenaX - 3;
         p.paused = true;
         callbacks.onReachBoss();
       }
@@ -165,13 +171,20 @@ export function RunnerSceneContents({
     <>
       <ambientLight intensity={0.85} />
       <directionalLight position={[20, 25, 15]} intensity={1.1} castShadow />
-      <ParallaxBackground physicsRef={physicsRef} />
+      <ParallaxBackground physicsRef={physicsRef} theme={theme} />
       <TrackDecor
+        track={track}
+        theme={theme}
         hitIds={physicsRef.current.hitIds}
         collectedIds={physicsRef.current.collectedIds}
         completedGates={physicsRef.current.completedGates}
       />
-      <BossArena hitsLanded={callbacks.bossHitsLanded} defeated={callbacks.bossDefeated} />
+      <BossArena
+        x={track.bossArenaX}
+        hitsLanded={callbacks.bossHitsLanded}
+        totalHits={callbacks.bossTotalHits}
+        defeated={callbacks.bossDefeated}
+      />
       <PlayerAvatar ref={playerGroupRef} />
     </>
   );
