@@ -11,6 +11,7 @@ import { HUD } from './ui/HUD';
 import { TouchControls } from './ui/TouchControls';
 import { PauseMenu } from './ui/PauseMenu';
 import { DialogBubble } from './ui/DialogBubble';
+import { sfx } from './audio/sfx';
 import './ui/dialog-bubble.css';
 import './App.css';
 
@@ -43,6 +44,7 @@ export default function App() {
   const [energy, setEnergy] = useState<number | null>(null);
   const [zapToast, setZapToast] = useState(false);
   const [gateOpenToast, setGateOpenToast] = useState(false);
+  const [muted, setMuted] = useState(() => sfx.isMuted);
   const zapTimeoutRef = useRef<number | null>(null);
   const gateTimeoutRef = useRef<number | null>(null);
 
@@ -51,6 +53,27 @@ export default function App() {
   useEffect(() => {
     if (!runnerRef.current) runnerRef.current = new PyodideRunner();
   }, []);
+
+  // Browsers block audio output until a real user gesture happens on the
+  // page — unlock the sound engine on the very first click/tap/keypress,
+  // once, then stop listening.
+  useEffect(() => {
+    const unlock = () => {
+      sfx.unlock();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+  function toggleMute() {
+    setMuted(sfx.toggleMute());
+  }
 
   useEffect(() => {
     if (screen !== 'game' || !activeLevel || !canvasRef.current) return;
@@ -85,6 +108,7 @@ export default function App() {
       gameRef.current = game;
       if (game.isHurdleLevel) setEnergy(0);
       setGameReady(true);
+      sfx.startAmbient();
       // Dev-only hook for automated QA (Playwright) to read the player's
       // real position instead of guessing it from key-hold timing. Never
       // present in a production build.
@@ -114,6 +138,7 @@ export default function App() {
       setBootError(String(err?.message ?? err));
     }
     return () => {
+      sfx.stopAmbient();
       gameRef.current?.dispose();
       gameRef.current = null;
       setGameReady(false);
@@ -192,6 +217,8 @@ export default function App() {
         energy={energy}
         missionText={missionText}
         missionDone={missionDone}
+        muted={muted}
+        onToggleMute={toggleMute}
         onPause={() => setPaused(true)}
         onBackToMap={handleBackToMap}
       />
@@ -204,7 +231,7 @@ export default function App() {
 
       {zapToast && (
         <div className="zap-toast" data-ui>
-          ⚡ Caught by the Guardian! −{20} energy
+          ⚡ Caught by the Guardian! {isHurdleLevel ? '−20 energy' : '−2 coins'}
         </div>
       )}
       {gateOpenToast && (

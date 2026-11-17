@@ -51,9 +51,22 @@
   backdrop-filter: blur(4px);
 }
 
-.hud-pause {
+.hud-mute {
   pointer-events: auto;
   margin-left: auto;
+  background: linear-gradient(135deg, rgba(20, 36, 54, 0.78), rgba(10, 20, 36, 0.78));
+  color: #eaf9ff;
+  border: 1px solid rgba(90, 220, 255, 0.45);
+  box-shadow: 0 0 10px rgba(50, 200, 255, 0.3);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.hud-pause {
+  pointer-events: auto;
   background: linear-gradient(135deg, rgba(20, 36, 54, 0.78), rgba(10, 20, 36, 0.78));
   color: #eaf9ff;
   border: 1px solid rgba(90, 220, 255, 0.45);

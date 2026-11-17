@@ -9,6 +9,7 @@ import { Npc } from '../world/Npc';
 import { CodeTerminal } from '../world/Terminal';
 import { EnergyConduit } from '../world/EnergyConduit';
 import { EnergyGate } from '../world/EnergyGate';
+import { sfx } from '../../audio/sfx';
 
 export const ENERGY_GATE_THRESHOLD = 100;
 export const ENERGY_ZAP_PENALTY = 20;
@@ -103,6 +104,23 @@ export class GameScene {
       // the "hurdle" instead of earning their way past it.
       this.gate = new EnergyGate(this.scene, new Vector3(0, 0, -7.5), 30);
       this.guardian = new Guardian(this.scene, new Vector3(6, 0, -9), new Vector3(-4, 0, -9));
+      // Level 1's Guardian only wakes up once the player earns it, by
+      // solving the first conduit (see markConduitSolved below).
+    } else {
+      // Every other World-1 level keeps the same threat alive, lighter
+      // touch: no conduits/gate puzzle (the level's own terminal mission
+      // IS the Python challenge), just a Guardian patrolling near the
+      // terminal and NPC, live and chasing from the moment the level
+      // starts — so every level has some real motion/stakes, not just
+      // Level 1. Getting caught costs a couple of coins and a jolt
+      // instead of energy (there's no energy bar outside the hurdle
+      // level), and never blocks reaching the terminal.
+      // Patrol line kept a few extra units south of the spawn point (0,-4)
+      // so the Guardian doesn't ambush the player in their very first
+      // second before they've had a chance to move — it still patrols
+      // right across the path to the terminal/NPC.
+      this.guardian = new Guardian(this.scene, new Vector3(9, 0, -8), new Vector3(-4, 0, -8));
+      this.guardian.activate();
     }
 
     this.input.onInteract(() => this.checkInteract());
@@ -148,11 +166,19 @@ export class GameScene {
       for (const conduit of this.conduits) conduit.update(dt);
       if (this.gate) this.gate.update(dt, this.energy / ENERGY_GATE_THRESHOLD);
       if (this.guardian) {
+        const wasChasing = this.guardian.state === 'chase';
         this.guardian.update(dt, this.player.position);
+        if (this.guardian.state === 'chase' && !wasChasing) sfx.playChase();
         if (this.guardian.isCatching(this.player.position)) {
           this.guardian.zapAndRetreat();
-          this.energy = Math.max(0, this.energy - ENERGY_ZAP_PENALTY);
-          this.callbacks.onEnergyChange(this.energy);
+          sfx.playZap();
+          if (this.isHurdleLevel) {
+            this.energy = Math.max(0, this.energy - ENERGY_ZAP_PENALTY);
+            this.callbacks.onEnergyChange(this.energy);
+          } else {
+            this.score = Math.max(0, this.score - 2);
+            this.callbacks.onScoreChange(this.score);
+          }
           this.callbacks.onZapped();
         }
       }
@@ -181,11 +207,13 @@ export class GameScene {
     const conduit = this.conduits[index];
     if (!conduit || conduit.solved) return;
     conduit.markSolved();
+    sfx.playPowerUp();
     this.guardian?.activate();
     this.energy = Math.min(ENERGY_GATE_THRESHOLD, this.energy + 50);
     this.callbacks.onEnergyChange(this.energy);
     if (this.energy >= ENERGY_GATE_THRESHOLD && this.gate && !this.gate.isOpen) {
       this.gate.open();
+      sfx.playUnlock();
       this.callbacks.onGateOpen();
     }
   }
@@ -197,6 +225,7 @@ export class GameScene {
         coin.collected = true;
         coin.mesh.setEnabled(false);
         this.score += 1;
+        sfx.playCoin();
         this.callbacks.onScoreChange(this.score);
       }
     }
@@ -204,6 +233,7 @@ export class GameScene {
 
   markTerminalSolved() {
     this.terminal.markSolved();
+    sfx.playComplete();
     // The tangible payoff: a treasure chest actually pops open in the
     // world next to the terminal, not just a text banner — something the
     // player then has to go run over and collect.

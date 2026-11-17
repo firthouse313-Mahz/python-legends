@@ -7,11 +7,13 @@ interface Props {
   energy?: number | null;
   missionText: string;
   missionDone: boolean;
+  muted?: boolean;
+  onToggleMute?: () => void;
   onPause: () => void;
   onBackToMap?: () => void;
 }
 
-export function HUD({ score, xp, energy, missionText, missionDone, onPause, onBackToMap }: Props) {
+export function HUD({ score, xp, energy, missionText, missionDone, muted, onToggleMute, onPause, onBackToMap }: Props) {
   return (
     <div className="hud" data-ui>
       <div className="hud-top">
@@ -28,6 +30,11 @@ export function HUD({ score, xp, energy, missionText, missionDone, onPause, onBa
           <span className="hud-icon">⭐</span>
           <span>{xp} XP</span>
         </div>
+        {onToggleMute && (
+          <button className="hud-mute" onClick={onToggleMute} aria-label={muted ? 'Unmute sound' : 'Mute sound'}>
+            {muted ? '🔇' : '🔊'}
+          </button>
+        )}
         <button className="hud-pause" onClick={onPause} aria-label="Pause">⏸</button>
       </div>
       {energy !== null && energy !== undefined && (

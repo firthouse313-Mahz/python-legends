@@ -117,13 +117,30 @@ world/level to jump into (or switching pathways), and "Stay & explore" /
 Playwright: the World Map screen never appears between two chained
 levels.
 
+**Real sound effects, everywhere** — synthesized on the fly with the Web
+Audio API (`src/audio/sfx.ts`), so there are no audio asset files to fetch
+(no network access to a sound-asset host from this sandbox): coin pickups,
+jumping, a predict-question right/wrong answer, Run passing/failing, an
+Energy Conduit charging, the Vault Gate unlocking, the Guardian spotting
+and catching the player, and a fanfare on finishing a level's terminal —
+plus a soft, sparse ambient loop while playing. A mute toggle (🔊/🔇) sits
+in the HUD next to pause and remembers its state across sessions.
+
+**The Guardian chase now lives in every World 1 level, not just Level 1.**
+Levels 2–7 each get their own Guardian patrolling a line near the
+terminal/NPC area, live and hunting from the moment the level loads — no
+conduits or gate puzzle needed there, since the level's own terminal
+mission already is the real Python challenge. Getting caught costs a
+couple of coins and a jolt (there's no energy bar outside the hurdle
+level) and never blocks reaching the terminal — verified with Playwright
+that the terminal is still reachable and solvable on every level with the
+Guardian active. Level 1 keeps its deeper, richer conduit + gate + energy
+version as the "tutorial boss" introduction to the mechanic.
+
 Everything from Prompts 4–8 (the full 9-step learning cycle with
 story/predict/debug/apply/HOTS/boss per level, arcade polish, the Study
 Skills Academy, accounts/teacher dashboard, deployment/QA, and the
-separate SQL game) is **not** built yet, and the chase/hurdle mechanic
-above exists only on Level 1 so far — extending it (or a variant of it)
-across more levels is a natural next step once this proof-of-concept gets
-feedback.
+separate SQL game) is **not** built yet.
 
 ### Known limitations (disclosed honestly, not swept under the rug)
 

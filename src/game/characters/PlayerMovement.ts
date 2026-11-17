@@ -1,6 +1,7 @@
 import { Scene, Vector3 } from '@babylonjs/core';
 import { InputManager } from '../controls/InputManager';
 import { RobotCharacter } from './RobotCharacter';
+import { sfx } from '../../audio/sfx';
 
 const WALK_SPEED = 3.2;
 const RUN_SPEED = 6.4;
@@ -58,6 +59,7 @@ export class PlayerMovement {
     if (this.grounded && this.input.consumeJump()) {
       this.velocityY = JUMP_VELOCITY;
       this.grounded = false;
+      sfx.playJump();
     } else {
       this.input.consumeJump(); // discard if not grounded
     }

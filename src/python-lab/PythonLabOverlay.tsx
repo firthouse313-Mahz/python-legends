@@ -4,6 +4,7 @@ import { python } from '@codemirror/lang-python';
 import type { Mission, TestCase } from '../curriculum/missions';
 import { progressService } from '../progress/progressService';
 import { PyodideRunner } from './PyodideRunner';
+import { sfx } from '../audio/sfx';
 import './python-lab.css';
 
 interface Props {
@@ -68,8 +69,10 @@ export function PythonLabOverlay({
     setPredictChoice(index);
     if (index === mission.predict!.correctIndex) {
       setPredictWrongTry(false);
+      sfx.playSuccess();
     } else {
       setPredictWrongTry(true);
+      sfx.playError();
     }
   }
 
@@ -96,6 +99,7 @@ export function PythonLabOverlay({
       if (!result.ok) {
         setErrorText(result.error ?? 'Something went wrong running your code.');
         setPhase('failed');
+        sfx.playError();
         return;
       }
       const failure =
@@ -103,12 +107,14 @@ export function PythonLabOverlay({
       if (failure) {
         setErrorText(failure);
         setPhase('failed');
+        sfx.playError();
         return;
       }
     }
 
     setOutput(lastOutput);
     setPhase('success');
+    sfx.playSuccess();
     if (mode === 'main' && !succeededMain.current) {
       succeededMain.current = true;
       onMissionComplete();
@@ -146,7 +152,7 @@ export function PythonLabOverlay({
       <div className="lab-panel">
         <header className="lab-header">
           <h2>🖥️ {mode === 'main' ? mission.title : `Bonus: Debug It!`}</h2>
-          <button className="lab-close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="lab-close" onClick={() => { sfx.playClick(); onClose(); }} aria-label="Close">✕</button>
         </header>
 
         {phase === 'predict' && predict ? (
