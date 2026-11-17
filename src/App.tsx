@@ -11,6 +11,7 @@ import { HUD } from './ui/HUD';
 import { TouchControls } from './ui/TouchControls';
 import { PauseMenu } from './ui/PauseMenu';
 import { DialogBubble } from './ui/DialogBubble';
+import { RunnerGame } from './runner/RunnerGame';
 import { sfx } from './audio/sfx';
 import './ui/dialog-bubble.css';
 import './App.css';
@@ -75,8 +76,16 @@ export default function App() {
     setMuted(sfx.toggleMute());
   }
 
+  // World 1 ("Python Forest") now runs on the new continuous
+  // React-Three-Fiber runner engine (src/runner/) instead of the old
+  // Babylon.js free-roam village — see RunnerGame below. This effect only
+  // builds the old Babylon scene for a level outside World 1, which isn't
+  // reachable yet since no other world has real content; the old engine
+  // is kept, just unused, in case it's needed again.
+  const isRunnerWorld = activeLevel?.worldId === 'world-1';
+
   useEffect(() => {
-    if (screen !== 'game' || !activeLevel || !canvasRef.current) return;
+    if (screen !== 'game' || !activeLevel || !canvasRef.current || isRunnerWorld) return;
     setMissionDone(progressService.isCompleted(activeLevel.id));
     progressService.markStarted(activeLevel.id);
     try {
@@ -174,6 +183,10 @@ export default function App() {
 
   if (screen === 'hub') {
     return <WorldMapScreen onPlayLevel={handlePlayLevel} />;
+  }
+
+  if (isRunnerWorld && runnerRef.current) {
+    return <RunnerGame runner={runnerRef.current} onBackToMap={handleBackToMap} />;
   }
 
   const mission = activeLevel?.missionId ? getMission(activeLevel.missionId) : undefined;

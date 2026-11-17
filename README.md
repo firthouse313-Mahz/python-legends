@@ -1,13 +1,77 @@
 # Digi Class – Python Legends
 
-A real third-person 3D arcade adventure where students write and run **real
+A continuous auto-running 3D platformer where students write and run **real
 Python** (via Pyodide — actual CPython compiled to WebAssembly, never
-simulated or hard-coded output) to progress through a voxel-style world.
-Built with React + TypeScript + Vite + Babylon.js.
+simulated or hard-coded output) to progress through "Python Forest," World 1
+of a 5-world curriculum. Built with React + TypeScript + Vite.
 
 This is a separate project from the main DigiClass platform, linked from its
 "Digi Game" nav card. SQL is planned as a separate, future game and is out
 of scope here.
+
+## Status: continuous-runner rebuild of World 1 (milestone 2-4 of the
+## adventure-game brief)
+
+**Big architecture change:** the game was rebuilt from a free-roam
+third-person Babylon.js explorer (walk around, talk to an NPC, walk up to a
+terminal) into a **continuous auto-scrolling platformer** on **React Three
+Fiber** (`src/runner/`), per the "PLAY. EXPLORE. CODE. CONQUER." brief. The
+player auto-runs forward; jump and slide clear obstacles; the same 7 real,
+already-built World-1 Python missions now sit as glowing "gates" along the
+track that pause the run until solved, then the run continues automatically
+— no trip back to the World Map between challenges. A boss fight (**The
+Variable Monster**) closes out the world. The old Babylon.js free-roam
+engine (`src/game/`) is kept in the repo, unused, in case anything from it
+is needed again — nothing was deleted.
+
+World 1 is renamed **"Python Forest"** and Worlds 2-5 are renamed/regrouped
+to **Loop Kingdom, Function Castle, Data Structure City, and The Coding
+Battle** (`src/curriculum/worlds.ts`), matching the new brief; each also now
+records its boss name (Infinite Loop Dragon, The Return Wizard, The Data
+Destroyer, The Master Debugger) for when their real content is built.
+Worlds 2-5 still have **zero real content** — same honest "coming soon" data
+as before, now just relabeled.
+
+### What's real in the new runner (verified with Playwright, no mocked data)
+
+- **Continuous auto-run** down a track (`src/runner/trackData.ts`): no
+  steering needed, just forward momentum; jump (+ a double jump) and slide
+  clear ground/overhead obstacles.
+- **All 7 real World-1 missions** (unchanged content, unchanged Pyodide
+  checking logic, unchanged `PythonLabOverlay`) sit as sequential gates.
+  Verified end-to-end: a full run solves all 7 with real typed Python,
+  auto-continues after each one with zero trips to the map, then the boss
+  fight triggers automatically.
+- **Boss fight:** 3 "predict the output" hits on The Variable Monster;
+  wrong answers cost energy and the question stays up to retry (never a
+  hard fail); defeating it awards a bonus and marks World 1 complete.
+- **Energy, coins, XP, shield/boost power-ups:** hitting an obstacle costs
+  energy (or is absorbed by a collected shield); energy hitting 0 respawns
+  the student at their last cleared gate, not all the way from zero.
+- **Checkpoint/resume:** leaving and coming back resumes the run just past
+  the furthest level already completed (derived from the same
+  `progressService` save data as before — no new save schema needed).
+- **Desktop + touch:** Space/↑ to jump, ↓ to slide, or on-screen JUMP/SLIDE
+  buttons on touch devices; verified on a mobile viewport.
+- **Sound, mute toggle, pause menu:** reused from the existing `src/audio/sfx.ts`
+  synthesized sound engine and `PauseMenu`.
+
+### What's not built yet
+
+- **Worlds 2-5 have no real scenes or missions** — still just honest
+  placeholder topic/boss-name data, same limitation as before, now
+  reflecting the brief's new world names.
+- **Parallax is a simple 3-layer recycling effect**, not hand-painted art
+  (no external image assets are fetchable in this environment).
+- **No lives system** — only the energy/respawn-to-checkpoint loop described
+  above; "lives" in the strict sense (a limited count, game-over screen)
+  wasn't built this pass.
+- **Daily challenges, achievement badges, and a personal-best tracker**
+  from the brief's reward-system section aren't built yet.
+- The old free-roam Babylon engine's own features (the Level-1
+  conduit/gate/Guardian hurdle sequence, NPC dialog) are **not** part of the
+  new runner — that whole interaction model was replaced, per the chosen
+  direction, by the gate-gameplay described above.
 
 ## Status: Prompt 3 in progress (real Python coding laboratory)
 
