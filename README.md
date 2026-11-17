@@ -7,8 +7,38 @@ starting with "Python Forest" (World 1) and "Loop Kingdom" (World 2). Built
 with React + TypeScript + Vite.
 
 This is a separate project from the main DigiClass platform, linked from its
-"Digi Game" nav card. SQL is planned as a separate, future game and is out
-of scope here.
+"Digi Game" nav card (opens in a new tab). SQL is planned as a separate,
+future game and is out of scope here.
+
+## Accounts
+
+Students log in with a name + PIN they pick themselves the first time —
+**a separate account from DigiClass**, with its own roster. The PIN is
+never sent back or stored in the clear: only a salted hash reaches the
+backend, the same way DigiClass's own student PIN login already works.
+Progress (XP, coins, completed levels/bosses, pathway) is saved to and
+loaded from that backend on every change, so logging in with the same
+name + PIN from a different device picks up right where the student left
+off — not just a per-browser save.
+
+That backend is the **same Google Apps Script + Sheet DigiClass itself
+already runs** (see `digiclass`'s `sheet-script-template.gs`, actions
+`plclaim`/`plload`/`plsave`), in its own "PL Students"/"PL Progress"
+sheets — nothing shared with DigiClass's own student roster or PIN, and
+no second backend for a teacher to stand up. `src/account/accountService.ts`
+is the client for it; `src/account/cloudSync.ts` is the thin layer that
+pushes a fresh snapshot to the backend on every `progressService` change
+(`progressService` itself stays network-agnostic — see
+`src/progress/progressService.ts`'s `hydrate()`/`getSnapshot()`).
+
+**Not yet possible to verify from this environment:** the sandboxed
+container this was built in has no outbound network access to
+`script.google.com`, so the login/sync code was verified against a mocked
+version of the same backend contract (Playwright, intercepting the exact
+request/response shapes `plclaim`/`plload`/`plsave` use) rather than the
+real live endpoint. The logic is sound and type-checked, but a real
+login + cross-device resume should be tried once deployed, since this
+specific path couldn't be exercised end-to-end here.
 
 ## Status: World 1 + World 2 live on the continuous-runner engine
 ## (milestone 5 of the adventure-game brief, in progress)

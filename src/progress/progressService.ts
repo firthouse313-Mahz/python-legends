@@ -9,7 +9,7 @@ import { WORLDS, getWorld, type LevelDef, type WorldDef } from '../curriculum/wo
 export type LevelStatus = 'locked' | 'unlocked' | 'in_progress' | 'completed' | 'coming_soon';
 export type PathwayChoice = 'cs' | 'ip';
 
-interface ProgressState {
+export interface ProgressState {
   pathway: PathwayChoice;
   startedLevelIds: string[];
   completedLevelIds: string[];
@@ -57,6 +57,25 @@ export const progressService = {
   subscribe(listener: Listener): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+
+  /** A plain snapshot of everything worth syncing to the backend — same
+   *  shape the backend hands back from plload, so a round trip through the
+   *  server is lossless. */
+  getSnapshot(): ProgressState {
+    return { ...state };
+  },
+
+  /** Overwrites local state with a snapshot pulled from the backend (e.g.
+   *  on login, so progress follows the student to a new device) — the
+   *  server is the source of truth once a student is logged in. `null`
+   *  (nothing saved yet for this account) is a no-op: keep whatever's
+   *  already here rather than wiping a fresh account's starting state. */
+  hydrate(saved: ProgressState | null) {
+    if (!saved) return;
+    state = { ...defaultState(), ...saved };
+    saveState(state);
+    notify();
   },
 
   getPathway(): PathwayChoice {

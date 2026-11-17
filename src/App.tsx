@@ -12,8 +12,12 @@ import { TouchControls } from './ui/TouchControls';
 import { PauseMenu } from './ui/PauseMenu';
 import { DialogBubble } from './ui/DialogBubble';
 import { RunnerGame } from './runner/RunnerGame';
+import { LoginScreen } from './ui/LoginScreen';
+import { accountService, type AccountIdentity } from './account/accountService';
+import { cloudSync } from './account/cloudSync';
 import { sfx } from './audio/sfx';
 import './ui/dialog-bubble.css';
+import './ui/login-screen.css';
 import './App.css';
 
 function isTouchDevice() {
@@ -30,6 +34,42 @@ export default function App() {
 
   const [screen, setScreen] = useState<Screen>('hub');
   const [activeLevel, setActiveLevel] = useState<LevelDef | null>(null);
+
+  // Python Legends' own login — separate from DigiClass. Nothing below this
+  // renders until someone is logged in, so progress is always tied to a
+  // real account rather than just this browser. See src/account/.
+  const [identity, setIdentity] = useState<AccountIdentity | null>(() => accountService.getSavedIdentity());
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!identity) return;
+    let cancelled = false;
+    accountService.loadProgress(identity.sid).then((saved) => {
+      if (cancelled) return;
+      progressService.hydrate(saved);
+      setHydrated(true);
+      // Only start pushing changes up *after* hydration, so pulling the
+      // student's own just-loaded progress back down doesn't immediately
+      // echo straight back up as a redundant save.
+      cloudSync.start(identity);
+    });
+    return () => {
+      cancelled = true;
+      cloudSync.stop();
+    };
+  }, [identity]);
+
+  function handleLoggedIn(next: AccountIdentity) {
+    setHydrated(false);
+    setIdentity(next);
+  }
+
+  function handleLogOut() {
+    accountService.logOut();
+    cloudSync.stop();
+    setIdentity(null);
+    setHydrated(false);
+  }
 
   const [score, setScore] = useState(0);
   const [xp, setXp] = useState(0);
@@ -183,8 +223,28 @@ export default function App() {
     setPaused(false);
   }
 
+  if (!identity) {
+    return <LoginScreen onLoggedIn={handleLoggedIn} />;
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="login-screen">
+        <p style={{ color: '#9cc7e8' }}>Loading your progress…</p>
+      </div>
+    );
+  }
+
   if (screen === 'hub') {
-    return <WorldMapScreen onPlayLevel={handlePlayLevel} />;
+    return (
+      <>
+        <div className="login-whoami" data-ui>
+          <span>👤 {identity.name}</span>
+          <button onClick={handleLogOut}>Log out</button>
+        </div>
+        <WorldMapScreen onPlayLevel={handlePlayLevel} />
+      </>
+    );
   }
 
   if (isRunnerWorld && activeWorld && runnerRef.current) {
