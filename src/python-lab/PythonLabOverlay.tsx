@@ -19,12 +19,27 @@ interface Props {
   /** Optional: when provided, the success panel offers a second button
    *  that leaves the 3D scene and returns to the World Map hub. */
   onBackToMap?: () => void;
+  /** Optional: when provided (only ever for the main mission, when a next
+   *  level exists in the same world), the success panel leads with this —
+   *  chains straight into the next level in the same 3D session instead of
+   *  making the student go back to the map and click the next level card. */
+  onNextLevel?: () => void;
+  nextLevelLabel?: string;
 }
 
 type Phase = 'loading' | 'predict' | 'idle' | 'running' | 'success' | 'failed';
 type Mode = 'main' | 'debug';
 
-export function PythonLabOverlay({ mission, runner, onClose, onMissionComplete, onContinue, onBackToMap }: Props) {
+export function PythonLabOverlay({
+  mission,
+  runner,
+  onClose,
+  onMissionComplete,
+  onContinue,
+  onBackToMap,
+  onNextLevel,
+  nextLevelLabel,
+}: Props) {
   const [mode, setMode] = useState<Mode>('main');
   const [code, setCode] = useState(mission.starterCode);
   const [output, setOutput] = useState('');
@@ -196,9 +211,18 @@ export function PythonLabOverlay({ mission, runner, onClose, onMissionComplete, 
               <div className="lab-success">
                 <div>✅ The terminal lights up green — mission complete! +{mission.rewardXp} XP, +{mission.rewardCoins} coins.</div>
                 <div className="lab-success-actions">
-                  <button className="lab-btn lab-btn-primary" onClick={onContinue}>Continue exploring →</button>
+                  {onNextLevel ? (
+                    <button className="lab-btn lab-btn-primary" onClick={onNextLevel}>
+                      ▶ Next: {nextLevelLabel ?? 'Continue'}
+                    </button>
+                  ) : (
+                    <button className="lab-btn lab-btn-primary" onClick={onContinue}>Continue exploring →</button>
+                  )}
                   {mission.debugChallenge && !debugAlreadyDone && (
                     <button className="lab-btn" onClick={startDebugChallenge}>🐞 Bonus: Debug Challenge</button>
+                  )}
+                  {onNextLevel && (
+                    <button className="lab-btn" onClick={onContinue}>Stay &amp; explore</button>
                   )}
                   {onBackToMap && (
                     <button className="lab-btn" onClick={onBackToMap}>Back to World Map</button>

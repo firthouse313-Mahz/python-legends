@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GameScene } from './game/engine/GameScene';
 import { getMission } from './curriculum/missions';
 import { ENERGY_CHALLENGES } from './curriculum/energyChallenges';
-import type { LevelDef } from './curriculum/worlds';
+import { getNextPlayableLevel, type LevelDef } from './curriculum/worlds';
 import { progressService } from './progress/progressService';
 import { PyodideRunner } from './python-lab/PyodideRunner';
 import { PythonLabOverlay } from './python-lab/PythonLabOverlay';
@@ -167,6 +167,11 @@ export default function App() {
   const activeLabMission =
     labTarget?.kind === 'conduit' ? ENERGY_CHALLENGES[labTarget.index] : labTarget?.kind === 'main' ? mission : undefined;
 
+  // The next level in the same world, if one exists — lets a student chain
+  // straight from one level's terminal into the next without a detour back
+  // to the World Map hub in between.
+  const nextLevel = activeLevel ? getNextPlayableLevel(activeLevel.id) : undefined;
+
   const promptVisible = (nearNpc || nearTerminal || nearConduit) && !dialogOpen && !labOpen && !paused;
 
   return (
@@ -253,6 +258,18 @@ export default function App() {
           }}
           onContinue={() => setLabTarget(null)}
           onBackToMap={handleBackToMap}
+          onNextLevel={
+            labTarget.kind === 'main' && nextLevel
+              ? () => {
+                  setLabTarget(null);
+                  // Same 3D session, no map screen in between — just hands
+                  // the next level's LevelDef to the existing effect, which
+                  // tears down and rebuilds the scene for it immediately.
+                  setActiveLevel(nextLevel);
+                }
+              : undefined
+          }
+          nextLevelLabel={nextLevel ? `Level ${nextLevel.globalNumber}: ${nextLevel.topic}` : undefined}
         />
       )}
 

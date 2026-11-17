@@ -138,3 +138,19 @@ export function getLevel(levelId: string): LevelDef | undefined {
 export function getAllLevelsFlat(): LevelDef[] {
   return WORLDS.flatMap((w) => w.levels);
 }
+
+/**
+ * The next level after this one, in the same world, if it's implemented
+ * and playable — used to chain levels together in one continuous 3D
+ * session instead of forcing a trip back to the World Map after every
+ * single level. Returns undefined at the end of a world (or if the next
+ * level isn't built yet), which is exactly when going back to the map
+ * makes sense — e.g. to pick a different pathway/world.
+ */
+export function getNextPlayableLevel(levelId: string): LevelDef | undefined {
+  const world = WORLDS.find((w) => w.levels.some((l) => l.id === levelId));
+  if (!world) return undefined;
+  const idx = world.levels.findIndex((l) => l.id === levelId);
+  const next = world.levels[idx + 1];
+  return next && next.implemented && next.missionId ? next : undefined;
+}

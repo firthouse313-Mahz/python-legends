@@ -108,6 +108,15 @@ solve:
 Map hub were redesigned with glowing cyan/violet glass panels and a
 cooler, higher-contrast sky and lighting in the village itself.
 
+**Levels now chain together in one session.** Finishing a level's main
+terminal offers a "▶ Next: Level N" button that jumps straight into the
+next level's scene immediately — no trip back to the World Map hub
+between every single level. The map is still there for picking which
+world/level to jump into (or switching pathways), and "Stay & explore" /
+"Back to World Map" remain available as secondary options. Verified with
+Playwright: the World Map screen never appears between two chained
+levels.
+
 Everything from Prompts 4–8 (the full 9-step learning cycle with
 story/predict/debug/apply/HOTS/boss per level, arcade polish, the Study
 Skills Academy, accounts/teacher dashboard, deployment/QA, and the
