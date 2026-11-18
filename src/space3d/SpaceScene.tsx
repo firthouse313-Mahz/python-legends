@@ -9,6 +9,8 @@ import {
   BOUNDS_Y,
   SHIP_MOVE_SPEED,
   DEBRIS_ENERGY_GAIN,
+  DEBRIS_MAGNET_RADIUS,
+  DEBRIS_COLLECT_RADIUS,
   UFO_ENERGY_GAIN,
   MAX_LIVES,
   currentSpeed,
@@ -70,21 +72,72 @@ function Planet({ planet, playerZ, burst }: { planet: PlanetHazard; playerZ: num
   );
 }
 
-function DebrisPickupView({ pickup, playerZ, collected }: { pickup: DebrisPickup; playerZ: number; collected: boolean }) {
-  const ref = useRef<THREE.Mesh>(null);
+/** A visibly recognizable piece of floating plastic waste — a crumpled
+ *  bottle shape in bright, glowing material so it reads clearly against
+ *  deep space, with a soft pulsing ring marking it as "collect me". It
+ *  also visibly drifts toward the ship once the ship is close, so
+ *  picking it up reads as one deliberate, visible pull-in rather than
+ *  something that happens invisibly underfoot. */
+function DebrisPickupView({
+  pickup,
+  playerZ,
+  shipX,
+  shipY,
+  collected,
+}: {
+  pickup: DebrisPickup;
+  playerZ: number;
+  shipX: number;
+  shipY: number;
+  collected: boolean;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Mesh>(null);
+  const drift = useRef({ x: 0, y: 0 });
   const dz = pickup.z - playerZ;
+
   useFrame((_, dt) => {
-    if (ref.current) {
-      ref.current.rotation.x += dt * 1.4;
-      ref.current.rotation.y += dt * 1.1;
+    if (bodyRef.current) {
+      bodyRef.current.rotation.x += dt * 1.1;
+      bodyRef.current.rotation.y += dt * 1.6;
+    }
+    if (groupRef.current) {
+      const d = Math.hypot(pickup.x - shipX, pickup.y - shipY);
+      if (Math.abs(dz) < DEBRIS_MAGNET_RADIUS * 1.4 && d < DEBRIS_MAGNET_RADIUS) {
+        const pull = 1 - d / DEBRIS_MAGNET_RADIUS; // 0 at the edge, 1 at the ship
+        drift.current.x += ((shipX - pickup.x) * pull * 2.2 - drift.current.x) * Math.min(1, dt * 6);
+        drift.current.y += ((shipY - pickup.y) * pull * 2.2 - drift.current.y) * Math.min(1, dt * 6);
+      } else {
+        drift.current.x *= 0.9;
+        drift.current.y *= 0.9;
+      }
+      groupRef.current.position.set(pickup.x + drift.current.x, pickup.y + drift.current.y, -pickup.z);
     }
   });
+
   if (dz < -4 || dz > 26 || collected) return null;
+  const opacity = dz > 16 ? Math.max(0, 1 - (dz - 16) / 10) : 1;
   return (
-    <mesh ref={ref} position={[pickup.x, pickup.y, -pickup.z]}>
-      <tetrahedronGeometry args={[0.16, 0]} />
-      <meshStandardMaterial color="#8fae7a" roughness={0.9} />
-    </mesh>
+    <group ref={groupRef} position={[pickup.x, pickup.y, -pickup.z]}>
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <ringGeometry args={[0.24, 0.3, 24]} />
+        <meshBasicMaterial color="#9affe0" transparent opacity={0.45 * opacity} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh ref={bodyRef}>
+        <capsuleGeometry args={[0.1, 0.16, 4, 8]} />
+        <meshStandardMaterial
+          color="#d9fff0"
+          emissive="#53e0b8"
+          emissiveIntensity={0.7}
+          transparent
+          opacity={0.92 * opacity}
+          roughness={0.25}
+        />
+      </mesh>
+      <Html center distanceFactor={6} style={{ opacity, pointerEvents: 'none' }}>
+        <div className="spc-debris-tag">♻️</div>
+      </Html>
+    </group>
   );
 }
 
@@ -136,6 +189,20 @@ function EnemyTargets({
         );
       })}
     </group>
+  );
+}
+
+/** A quick expanding/fading burst at the exact spot a pickup was just
+ *  eaten — the visible "got it" confirmation, on top of the toast. */
+function PickupBurst({ x, y, z, age }: { x: number; y: number; z: number; age: number }) {
+  const life = age / 0.5;
+  const scale = 0.15 + life * 0.9;
+  const opacity = Math.max(0, 1 - life);
+  return (
+    <mesh position={[x, y, -z]} rotation={[0, 0, 0]} scale={scale}>
+      <ringGeometry args={[0.5, 0.62, 20]} />
+      <meshBasicMaterial color="#9affe0" transparent opacity={opacity} side={THREE.DoubleSide} />
+    </mesh>
   );
 }
 
@@ -259,17 +326,27 @@ export function SpaceScene({
       }
     }
 
-    // --- ambient debris pickups: passive, no question, just fly through ---
+    // --- ambient debris pickups: passive, no question — the ship's
+    // "magnet" pulls them in on approach (see DebrisPickupView) and they
+    // are actually collected once close enough, with a visible burst at
+    // the exact collection point so "it got eaten" is unmistakable ---
     for (const pickup of DEBRIS_PICKUPS) {
       if (p.collectedDebrisIds.has(pickup.id)) continue;
       if (Math.abs(pickup.z - p.z) > 1.0) continue;
       const d = Math.hypot(pickup.x - p.x, pickup.y - p.y);
-      if (d < 0.5) {
+      if (d < DEBRIS_COLLECT_RADIUS) {
         p.collectedDebrisIds.add(pickup.id);
         p.energy = Math.min(100, p.energy + DEBRIS_ENERGY_GAIN);
+        p.pickupEffects.push({ id: `pk-${p.nextPickupEffectId++}`, x: p.x, y: p.y, z: p.z, age: 0 });
         callbacks.onEnergyChange(p.energy);
         callbacks.onDebrisCollected(pickup);
       }
+    }
+
+    // --- pickup bursts: brief visual confirmation, then gone ---
+    for (let i = p.pickupEffects.length - 1; i >= 0; i--) {
+      p.pickupEffects[i].age += dt;
+      if (p.pickupEffects[i].age > 0.5) p.pickupEffects.splice(i, 1);
     }
 
     // --- enemy UFO resolution: only a CORRECT hit destroys/resolves the
@@ -353,7 +430,18 @@ export function SpaceScene({
       ))}
 
       {DEBRIS_PICKUPS.map((pk) => (
-        <DebrisPickupView key={pk.id} pickup={pk} playerZ={physicsRef.current.z} collected={physicsRef.current.collectedDebrisIds.has(pk.id)} />
+        <DebrisPickupView
+          key={pk.id}
+          pickup={pk}
+          playerZ={physicsRef.current.z}
+          shipX={physicsRef.current.x}
+          shipY={physicsRef.current.y}
+          collected={physicsRef.current.collectedDebrisIds.has(pk.id)}
+        />
+      ))}
+
+      {physicsRef.current.pickupEffects.map((fx) => (
+        <PickupBurst key={fx.id} x={fx.x} y={fx.y} z={fx.z} age={fx.age} />
       ))}
 
       {ENEMY_ENCOUNTERS.map((e) => (

@@ -25,7 +25,9 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
   const [toast, setToast] = useState<string | null>(null);
   const [result, setResult] = useState<'none' | 'won' | 'lost' | 'destroyed'>('none');
   const [showLab, setShowLab] = useState(false);
+  const [showTip, setShowTip] = useState(false);
   const toastTimer = useRef<number | null>(null);
+  const tipTimer = useRef<number | null>(null);
 
   const mission = getMission('w1-l1');
   const running = !intro && result === 'none' && !showLab;
@@ -96,6 +98,9 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
   function startRun() {
     setIntro(false);
     physicsRef.current.paused = false;
+    setShowTip(true);
+    if (tipTimer.current) window.clearTimeout(tipTimer.current);
+    tipTimer.current = window.setTimeout(() => setShowTip(false), 6000);
   }
 
   const mins = Math.floor(timeLeft / 60);
@@ -139,6 +144,7 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
       {running && <div className="spc-mission-note">🌌 Space Guardians — dodge planets, clean the galaxy, destroy enemy UFOs</div>}
 
       {toast && <div className="spc-toast">{toast}</div>}
+      {running && showTip && !toast && <div className="spc-tip">🧲 Fly close to the glowing ♻️ plastic — it gets pulled in and collected</div>}
 
       {running && (
         <div className="spc-controls">

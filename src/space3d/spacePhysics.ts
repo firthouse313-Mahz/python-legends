@@ -14,6 +14,13 @@ export const DEBRIS_ENERGY_GAIN = 6;
 export const UFO_ENERGY_GAIN = 15;
 export const COMET_LIFE_RISK = true; // a comet hit costs a life, like a planet
 
+// How close the ship has to get before a plastic pickup is actually
+// collected, and the wider radius at which it visibly starts drifting
+// toward the ship (a "magnet" pull) so collecting it reads clearly as
+// one deliberate action, not something that happens invisibly.
+export const DEBRIS_MAGNET_RADIUS = 1.6;
+export const DEBRIS_COLLECT_RADIUS = 0.65;
+
 export interface Projectile {
   id: number;
   x: number;
@@ -36,6 +43,16 @@ export interface CometShard {
   age: number;
 }
 
+/** A short-lived visual burst where a plastic pickup was just collected
+ *  — the "it got eaten" confirmation, separate from the toast text. */
+export interface PickupEffect {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  age: number;
+}
+
 export interface SpacePhysics {
   z: number;
   x: number; // ship's current world-x, continuously controlled
@@ -54,6 +71,8 @@ export interface SpacePhysics {
   nextCometId: number;
   projectiles: Projectile[];
   nextProjectileId: number;
+  pickupEffects: PickupEffect[];
+  nextPickupEffectId: number;
 }
 
 export function createSpacePhysics(): SpacePhysics {
@@ -75,6 +94,8 @@ export function createSpacePhysics(): SpacePhysics {
     nextCometId: 1,
     projectiles: [],
     nextProjectileId: 1,
+    pickupEffects: [],
+    nextPickupEffectId: 1,
   };
 }
 

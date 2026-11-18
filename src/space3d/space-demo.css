@@ -226,3 +226,29 @@
   box-shadow: 0 0 10px rgba(255, 209, 102, 0.8);
   background: rgba(40, 40, 20, 0.95);
 }
+
+.spc-debris-tag {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(154, 255, 224, 0.9));
+  margin-top: 26px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.spc-tip {
+  position: absolute;
+  bottom: 118px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 16, 40, 0.85);
+  color: #9affe0;
+  border: 1px solid rgba(154, 255, 224, 0.5);
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 6;
+  text-align: center;
+  white-space: nowrap;
+}
