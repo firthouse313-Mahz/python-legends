@@ -3,20 +3,24 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SpaceshipAvatar } from './SpaceshipAvatar';
+import { EnemyUfo } from './EnemyUfo';
 import {
   BOUNDS_X,
   BOUNDS_Y,
   SHIP_MOVE_SPEED,
-  WRONG_ENERGY_COST,
-  RIGHT_ENERGY_GAIN,
+  DEBRIS_ENERGY_GAIN,
+  UFO_ENERGY_GAIN,
+  MAX_LIVES,
   currentSpeed,
   type SpacePhysics,
 } from './spacePhysics';
-import { PLANETS, DEBRIS_CLUSTERS, LEVEL_END_Z, type DebrisCluster, type PlanetHazard } from './spaceLevel';
+import { PLANETS, DEBRIS_PICKUPS, ENEMY_ENCOUNTERS, LEVEL_END_Z, type EnemyEncounter, type PlanetHazard, type DebrisPickup } from './spaceLevel';
 
 export interface SpaceSceneCallbacks {
   onPlanetHit: (planet: PlanetHazard) => void;
-  onDebrisResolved: (cluster: DebrisCluster, correct: boolean) => void;
+  onCometHit: () => void;
+  onDebrisCollected: (pickup: DebrisPickup) => void;
+  onEnemyResolved: (enemy: EnemyEncounter, correct: boolean) => void;
   onLevelComplete: () => void;
   onLivesChange: (lives: number) => void;
   onEnergyChange: (energy: number) => void;
@@ -49,8 +53,7 @@ function Planet({ planet, playerZ, burst }: { planet: PlanetHazard; playerZ: num
   useFrame((_, dt) => {
     if (ref.current) ref.current.rotation.y += dt * 0.8;
   });
-  if (dz < -6 || dz > 40) return null;
-  if (burst) return null;
+  if (dz < -6 || dz > 40 || burst) return null;
   return (
     <group position={[planet.x, planet.y, -planet.z]} ref={ref}>
       <mesh castShadow>
@@ -67,59 +70,43 @@ function Planet({ planet, playerZ, burst }: { planet: PlanetHazard; playerZ: num
   );
 }
 
-function CometBurst({ planet }: { planet: PlanetHazard }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const age = useRef(0);
-  const shards = useMemo(
-    () =>
-      Array.from({ length: 6 }).map((_, i) => ({
-        dir: new THREE.Vector3(Math.cos((i / 6) * Math.PI * 2), Math.sin((i / 6) * Math.PI * 2), (Math.random() - 0.5)).normalize(),
-      })),
-    [],
-  );
+function DebrisPickupView({ pickup, playerZ, collected }: { pickup: DebrisPickup; playerZ: number; collected: boolean }) {
+  const ref = useRef<THREE.Mesh>(null);
+  const dz = pickup.z - playerZ;
   useFrame((_, dt) => {
-    age.current += dt;
-    if (groupRef.current) {
-      groupRef.current.children.forEach((child, i) => {
-        child.position.addScaledVector(shards[i].dir, dt * 4);
-        child.scale.setScalar(Math.max(0, 1 - age.current * 0.6));
-      });
+    if (ref.current) {
+      ref.current.rotation.x += dt * 1.4;
+      ref.current.rotation.y += dt * 1.1;
     }
   });
-  if (age.current > 1.6) return null;
+  if (dz < -4 || dz > 26 || collected) return null;
   return (
-    <group ref={groupRef} position={[planet.x, planet.y, -planet.z]}>
-      {shards.map((_, i) => (
-        <mesh key={i}>
-          <dodecahedronGeometry args={[0.14, 0]} />
-          <meshStandardMaterial color="#ff9a3c" emissive="#ff6a1c" emissiveIntensity={1.2} />
-        </mesh>
-      ))}
-    </group>
+    <mesh ref={ref} position={[pickup.x, pickup.y, -pickup.z]}>
+      <tetrahedronGeometry args={[0.16, 0]} />
+      <meshStandardMaterial color="#8fae7a" roughness={0.9} />
+    </mesh>
   );
 }
 
-function DebrisTargets({
-  cluster,
+function EnemyTargets({
+  encounter,
   playerZ,
   shipX,
   shipY,
   resolved,
 }: {
-  cluster: DebrisCluster;
+  encounter: EnemyEncounter;
   playerZ: number;
   shipX: number;
   shipY: number;
   resolved: boolean;
 }) {
-  const dz = cluster.z - playerZ;
+  const dz = encounter.z - playerZ;
   if (dz < -4 || dz > 30 || resolved) return null;
   const opacity = dz > 18 ? Math.max(0, 1 - (dz - 18) / 12) : 1;
-  // highlight whichever debris the ship is currently closest to lining up
-  // with — this is the "aim," continuous rather than a lane toggle.
   let nearest = 0;
   let nearestDist = Infinity;
-  cluster.positions.forEach(([x, y], i) => {
+  encounter.positions.forEach(([x, y], i) => {
     const d = Math.hypot(x - shipX, y - shipY);
     if (d < nearestDist) {
       nearestDist = d;
@@ -127,35 +114,37 @@ function DebrisTargets({
     }
   });
   return (
-    <group position={[0, 0, -cluster.z]}>
-      {cluster.options.map((opt, i) => {
-        const [x, y] = cluster.positions[i];
+    <group position={[0, 0, -encounter.z]}>
+      {encounter.options.map((opt, i) => {
+        const [x, y] = encounter.positions[i];
         const isAligned = i === nearest && nearestDist < 0.9;
         return (
           <group key={i} position={[x, y, 0]}>
             {isAligned && (
-              <mesh rotation={[0, 0, Math.PI / 4]}>
-                <ringGeometry args={[0.38, 0.46, 4]} />
+              <mesh rotation={[0, 0, Math.PI / 4]} position={[0, 0.45, 0]}>
+                <ringGeometry args={[0.4, 0.48, 4]} />
                 <meshBasicMaterial color="#ffd166" transparent opacity={opacity} />
               </mesh>
             )}
-            <mesh rotation={[0.4, 0.6, 0]}>
-              <octahedronGeometry args={[0.26, 0]} />
-              <meshStandardMaterial
-                color={opt.correct ? '#2fae4a' : '#8a8a94'}
-                emissive={opt.correct ? '#1c7f3a' : '#3a3a40'}
-                emissiveIntensity={0.4}
-                transparent
-                opacity={opacity * 0.95}
-              />
-            </mesh>
-            <Html center distanceFactor={6} style={{ opacity, pointerEvents: 'none', width: 110 }}>
+            <group scale={opacity}>
+              <EnemyUfo hostile={!opt.correct} />
+            </group>
+            <Html center distanceFactor={6} style={{ opacity, pointerEvents: 'none', width: 110, marginTop: 28 }}>
               <div className={`spc-debris-label${isAligned ? ' spc-debris-label-aligned' : ''}`}>{opt.text}</div>
             </Html>
           </group>
         );
       })}
     </group>
+  );
+}
+
+function CometShardView({ x, y, z }: { x: number; y: number; z: number }) {
+  return (
+    <mesh position={[x, y, -z]} rotation={[Math.random(), Math.random(), 0]}>
+      <dodecahedronGeometry args={[0.15, 0]} />
+      <meshStandardMaterial color="#ff9a3c" emissive="#ff6a1c" emissiveIntensity={1} />
+    </mesh>
   );
 }
 
@@ -170,7 +159,6 @@ export function SpaceScene({
 }) {
   const shipRef = useRef<THREE.Group>(null);
   const projectileRefs = useRef<Map<number, THREE.Object3D>>(new Map());
-  const burstPlanetIds = useRef<Set<string>>(new Set());
   const lastPromptRef = useRef<string | null>(null);
   const { camera } = useThree();
 
@@ -201,16 +189,9 @@ export function SpaceScene({
   function fire() {
     const p = physicsRef.current;
     if (p.paused) return;
-    const cluster = DEBRIS_CLUSTERS.find((c) => !p.resolvedDebrisIds.has(c.id) && c.z - p.z < 24 && c.z - p.z > -2);
-    if (!cluster) return;
-    p.projectiles.push({
-      id: p.nextProjectileId++,
-      x: p.x,
-      y: p.y,
-      z: cluster.z,
-      startZ: p.z,
-      t: 0,
-    });
+    const enemy = ENEMY_ENCOUNTERS.find((e) => !p.resolvedEnemyIds.has(e.id) && e.z - p.z < 24 && e.z - p.z > -2);
+    if (!enemy) return;
+    p.projectiles.push({ id: p.nextProjectileId++, x: p.x, y: p.y, z: enemy.z, startZ: p.z, t: 0 });
   }
   fireApiRef.current = fire;
 
@@ -226,7 +207,8 @@ export function SpaceScene({
     p.x = THREE.MathUtils.clamp(p.x + p.moveX * SHIP_MOVE_SPEED * dt, -BOUNDS_X, BOUNDS_X);
     p.y = THREE.MathUtils.clamp(p.y + p.moveY * SHIP_MOVE_SPEED * dt, BOUNDS_Y[0], BOUNDS_Y[1]);
 
-    // planet collisions — physical hazard, costs a life, never just energy
+    // --- planet collisions: physical hazard, costs a life, bursts into
+    // persistent comet shards (a real new obstacle, not decoration) ---
     if (p.invulnTimer <= 0) {
       for (const planet of PLANETS) {
         if (p.hitPlanetIds.has(planet.id)) continue;
@@ -234,25 +216,74 @@ export function SpaceScene({
         const d = Math.hypot(planet.x - p.x, planet.y - p.y);
         if (d < planet.radius + 0.35) {
           p.hitPlanetIds.add(planet.id);
-          burstPlanetIds.current.add(planet.id);
           p.lives = Math.max(0, p.lives - 1);
           p.invulnTimer = 1.4;
           callbacks.onLivesChange(p.lives);
           callbacks.onPlanetHit(planet);
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            p.comets.push({
+              id: `comet-${p.nextCometId++}`,
+              x: planet.x,
+              y: planet.y,
+              z: planet.z,
+              vx: Math.cos(angle) * 1.2,
+              vy: Math.sin(angle) * 1.2,
+              age: 0,
+            });
+          }
         }
       }
     }
 
-    // debris projectile resolution
+    // --- comet shards: keep moving, can hit the ship too, expire after a
+    // few seconds ---
+    for (let i = p.comets.length - 1; i >= 0; i--) {
+      const comet = p.comets[i];
+      comet.age += dt;
+      comet.x += comet.vx * dt;
+      comet.y += comet.vy * dt;
+      if (comet.age > 3.2) {
+        p.comets.splice(i, 1);
+        continue;
+      }
+      if (p.invulnTimer <= 0 && Math.abs(comet.z - p.z) < 1.0) {
+        const d = Math.hypot(comet.x - p.x, comet.y - p.y);
+        if (d < 0.45) {
+          p.comets.splice(i, 1);
+          p.lives = Math.max(0, p.lives - 1);
+          p.invulnTimer = 1.4;
+          callbacks.onLivesChange(p.lives);
+          callbacks.onCometHit();
+        }
+      }
+    }
+
+    // --- ambient debris pickups: passive, no question, just fly through ---
+    for (const pickup of DEBRIS_PICKUPS) {
+      if (p.collectedDebrisIds.has(pickup.id)) continue;
+      if (Math.abs(pickup.z - p.z) > 1.0) continue;
+      const d = Math.hypot(pickup.x - p.x, pickup.y - p.y);
+      if (d < 0.5) {
+        p.collectedDebrisIds.add(pickup.id);
+        p.energy = Math.min(100, p.energy + DEBRIS_ENERGY_GAIN);
+        callbacks.onEnergyChange(p.energy);
+        callbacks.onDebrisCollected(pickup);
+      }
+    }
+
+    // --- enemy UFO resolution: only a CORRECT hit destroys/resolves the
+    // encounter — a wrong hit does nothing and the UFO stays, so the
+    // student can keep trying other pods, no penalty for a wrong guess ---
     for (let i = p.projectiles.length - 1; i >= 0; i--) {
       const proj = p.projectiles[i];
       proj.t += dt * 2.6;
       if (proj.t >= 1) {
-        const cluster = DEBRIS_CLUSTERS.find((c) => c.z === proj.z);
-        if (cluster && !p.resolvedDebrisIds.has(cluster.id)) {
+        const enemy = ENEMY_ENCOUNTERS.find((e) => e.z === proj.z);
+        if (enemy && !p.resolvedEnemyIds.has(enemy.id)) {
           let nearest = 0;
           let nearestDist = Infinity;
-          cluster.positions.forEach(([x, y], idx) => {
+          enemy.positions.forEach(([x, y], idx) => {
             const d = Math.hypot(x - proj.x, y - proj.y);
             if (d < nearestDist) {
               nearestDist = d;
@@ -260,16 +291,16 @@ export function SpaceScene({
             }
           });
           if (nearestDist < 0.9) {
-            p.resolvedDebrisIds.add(cluster.id);
-            const correct = cluster.options[nearest].correct;
+            const correct = enemy.options[nearest].correct;
             if (correct) {
-              p.energy = Math.min(100, p.energy + RIGHT_ENERGY_GAIN);
+              p.resolvedEnemyIds.add(enemy.id);
+              p.energy = Math.min(100, p.energy + UFO_ENERGY_GAIN);
+              if (p.lives < MAX_LIVES) p.lives += 1;
               p.boostTimer = 1.6;
-            } else {
-              p.energy = Math.max(0, p.energy - WRONG_ENERGY_COST);
+              callbacks.onLivesChange(p.lives);
+              callbacks.onEnergyChange(p.energy);
             }
-            callbacks.onEnergyChange(p.energy);
-            callbacks.onDebrisResolved(cluster, correct);
+            callbacks.onEnemyResolved(enemy, correct);
           }
         }
         p.projectiles.splice(i, 1);
@@ -298,8 +329,8 @@ export function SpaceScene({
       }
     }
 
-    const activeCluster = DEBRIS_CLUSTERS.find((c) => !p.resolvedDebrisIds.has(c.id) && c.z - p.z < 30 && c.z - p.z > -2);
-    const nextPrompt = activeCluster?.prompt ?? null;
+    const activeEnemy = ENEMY_ENCOUNTERS.find((e) => !p.resolvedEnemyIds.has(e.id) && e.z - p.z < 30 && e.z - p.z > -2);
+    const nextPrompt = activeEnemy?.prompt ?? null;
     if (nextPrompt !== lastPromptRef.current) {
       lastPromptRef.current = nextPrompt;
       callbacks.onActivePromptChange(nextPrompt);
@@ -316,18 +347,23 @@ export function SpaceScene({
       {PLANETS.map((planet) => (
         <Planet key={planet.id} planet={planet} playerZ={physicsRef.current.z} burst={physicsRef.current.hitPlanetIds.has(planet.id)} />
       ))}
-      {PLANETS.filter((pl) => physicsRef.current.hitPlanetIds.has(pl.id)).map((pl) => (
-        <CometBurst key={pl.id} planet={pl} />
+
+      {physicsRef.current.comets.map((c) => (
+        <CometShardView key={c.id} x={c.x} y={c.y} z={c.z} />
       ))}
 
-      {DEBRIS_CLUSTERS.map((c) => (
-        <DebrisTargets
-          key={c.id}
-          cluster={c}
+      {DEBRIS_PICKUPS.map((pk) => (
+        <DebrisPickupView key={pk.id} pickup={pk} playerZ={physicsRef.current.z} collected={physicsRef.current.collectedDebrisIds.has(pk.id)} />
+      ))}
+
+      {ENEMY_ENCOUNTERS.map((e) => (
+        <EnemyTargets
+          key={e.id}
+          encounter={e}
           playerZ={physicsRef.current.z}
           shipX={physicsRef.current.x}
           shipY={physicsRef.current.y}
-          resolved={physicsRef.current.resolvedDebrisIds.has(c.id)}
+          resolved={physicsRef.current.resolvedEnemyIds.has(e.id)}
         />
       ))}
 
