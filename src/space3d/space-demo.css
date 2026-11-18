@@ -1,0 +1,228 @@
+.spc-root {
+  position: fixed;
+  inset: 0;
+  background: #05081a;
+  overflow: hidden;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+}
+
+.spc-question-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  background: #5ce1e6;
+  color: #05081a;
+  font-weight: 800;
+  font-size: 15px;
+  text-align: center;
+  padding: 8px 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.spc-hud {
+  position: absolute;
+  top: 44px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  gap: 10px;
+  z-index: 5;
+}
+.spc-pill {
+  background: rgba(10, 16, 40, 0.8);
+  color: #eaf6ff;
+  border: 1px solid rgba(92, 225, 230, 0.4);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: default;
+}
+.spc-pill[data-low='true'] {
+  background: #7a2e2e;
+  border-color: #ff9c9c;
+}
+.spc-back {
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.spc-meters {
+  position: absolute;
+  top: 92px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 5;
+}
+.spc-lives {
+  display: flex;
+  gap: 3px;
+  font-size: 16px;
+}
+.spc-life-off {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+.spc-energy-track {
+  flex: 1;
+  max-width: 180px;
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+.spc-energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5ce1e6, #ffd166);
+  transition: width 0.2s;
+}
+.spc-energy-label {
+  color: #eaf6ff;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.spc-mission-note {
+  position: absolute;
+  top: 128px;
+  left: 14px;
+  background: rgba(10, 16, 40, 0.65);
+  color: #cfe9ee;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 5;
+}
+
+.spc-toast {
+  position: absolute;
+  top: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 16, 40, 0.88);
+  color: #eaf6ff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  z-index: 6;
+  text-align: center;
+}
+
+.spc-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 5;
+}
+.spc-dpad {
+  display: grid;
+  grid-template-columns: 56px 56px;
+  grid-template-rows: 56px 56px;
+  gap: 6px;
+  justify-items: center;
+  align-items: center;
+}
+.spc-dpad-mid {
+  grid-column: 1 / span 2;
+  display: flex;
+  gap: 50px;
+}
+.spc-dpad-up { grid-column: 1 / span 2; }
+.spc-dpad-down { grid-column: 1 / span 2; }
+.spc-dpad-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(10, 16, 40, 0.7);
+  color: #eaf6ff;
+  font-size: 20px;
+  font-weight: 800;
+  touch-action: none;
+}
+.spc-fire-btn {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid #5ce1e6;
+  background: #1c9dff;
+  color: #05081a;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.spc-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 4, 14, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 20px;
+}
+.spc-card {
+  background: #0c1430;
+  color: #eaf6ff;
+  border: 1px solid rgba(92, 225, 230, 0.35);
+  border-radius: 18px;
+  padding: 28px 26px;
+  max-width: 460px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.spc-card h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+.spc-card p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+  color: #cfe9ee;
+}
+.spc-card-sub {
+  color: #ffd166 !important;
+  font-weight: 700;
+}
+.spc-start-btn {
+  margin-top: 10px;
+  background: #5ce1e6;
+  color: #05081a;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.spc-debris-label {
+  width: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #eaf6ff;
+  background: rgba(20, 28, 50, 0.85);
+  border: 1px solid rgba(138, 138, 148, 0.5);
+  border-radius: 6px;
+  padding: 3px 6px;
+  text-align: center;
+  line-height: 1.25;
+  font-family: ui-monospace, 'Courier New', monospace;
+}
+.spc-debris-label-aligned {
+  border: 2px solid #ffd166;
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.8);
+  background: rgba(40, 40, 20, 0.95);
+}

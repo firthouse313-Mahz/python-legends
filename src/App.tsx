@@ -17,6 +17,7 @@ import { accountService, type AccountIdentity } from './account/accountService';
 import { cloudSync } from './account/cloudSync';
 import { sfx } from './audio/sfx';
 import { ShootDemo } from './shoot3d/ShootDemo';
+import { SpaceDemo } from './space3d/SpaceDemo';
 import './ui/dialog-bubble.css';
 import './ui/login-screen.css';
 import './App.css';
@@ -34,9 +35,11 @@ export default function App() {
   // landing on the real code terminal at the end). Reachable directly at
   // /#shoot-demo without touching the live login/world-map flow below.
   const [showShootDemo, setShowShootDemo] = useState(() => window.location.hash === '#shoot-demo');
+  const [showSpaceDemo, setShowSpaceDemo] = useState(() => window.location.hash === '#space-demo');
   useEffect(() => {
     function onHash() {
       setShowShootDemo(window.location.hash === '#shoot-demo');
+      setShowSpaceDemo(window.location.hash === '#space-demo');
     }
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -239,6 +242,10 @@ export default function App() {
 
   if (showShootDemo) {
     return <ShootDemo onExit={() => { window.location.hash = ''; setShowShootDemo(false); }} />;
+  }
+
+  if (showSpaceDemo) {
+    return <SpaceDemo onExit={() => { window.location.hash = ''; setShowSpaceDemo(false); }} />;
   }
 
   if (!identity) {
