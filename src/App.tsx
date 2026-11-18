@@ -16,6 +16,7 @@ import { LoginScreen } from './ui/LoginScreen';
 import { accountService, type AccountIdentity } from './account/accountService';
 import { cloudSync } from './account/cloudSync';
 import { sfx } from './audio/sfx';
+import { ShootDemo } from './shoot3d/ShootDemo';
 import './ui/dialog-bubble.css';
 import './ui/login-screen.css';
 import './App.css';
@@ -28,6 +29,19 @@ type Screen = 'hub' | 'game';
 type LabTarget = { kind: 'main' } | { kind: 'conduit'; index: number };
 
 export default function App() {
+  // Standalone, no-login preview of the aim-and-shoot prototype (see
+  // conversation: fast concept-check action that never stops the run,
+  // landing on the real code terminal at the end). Reachable directly at
+  // /#shoot-demo without touching the live login/world-map flow below.
+  const [showShootDemo, setShowShootDemo] = useState(() => window.location.hash === '#shoot-demo');
+  useEffect(() => {
+    function onHash() {
+      setShowShootDemo(window.location.hash === '#shoot-demo');
+    }
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameScene | null>(null);
   const runnerRef = useRef<PyodideRunner | null>(null);
@@ -221,6 +235,10 @@ export default function App() {
     setScreen('hub');
     setActiveLevel(null);
     setPaused(false);
+  }
+
+  if (showShootDemo) {
+    return <ShootDemo onExit={() => { window.location.hash = ''; setShowShootDemo(false); }} />;
   }
 
   if (!identity) {
