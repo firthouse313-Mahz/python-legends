@@ -131,7 +131,7 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
 
       {running && (
         <div className="sd-aim-indicator">
-          🎯 AIMING: <b>{aimLabels[physicsRef.current.aim]}</b> — move with ◀ ▶, then FIRE
+          🎯 AIMING: <b>{aimLabels[physicsRef.current.aim]}</b> — move with ◀ ▶, then FIRE (or press ↑)
         </div>
       )}
 
@@ -167,9 +167,9 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
             <h2>Python Forest — Bug Hunt</h2>
             <p>
               Glitch bugs scatter through the trees ahead, each carrying a possible answer.
-              Cycle targets with ◀ ▶, fire with the button (or F / Enter) — you never stop
-              running. Miss, and the pursuer behind you closes in; three misses and it catches
-              you. At the end, a real code terminal opens for the actual challenge.
+              Cycle targets with ◀ ▶, then fire with the button, the ↑ arrow, or F / Enter —
+              you never stop running. Miss, and the pursuer behind you closes in; three misses
+              and it catches you. At the end, a real code terminal opens for the actual challenge.
             </p>
             <p className="sd-card-sub">45 seconds on the clock. Correct hits add time.</p>
             <button className="sd-start-btn" onClick={startRun} autoFocus>

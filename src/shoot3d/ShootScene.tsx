@@ -92,7 +92,7 @@ export function ShootScene({
           grounded.current = false;
         }
       }
-      if (e.key === 'f' || e.key === 'F' || e.key === 'Enter') fire();
+      if (e.key === 'f' || e.key === 'F' || e.key === 'Enter' || e.key === 'ArrowUp') fire();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

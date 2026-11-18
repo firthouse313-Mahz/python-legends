@@ -218,14 +218,11 @@ function CometShardView({ x, y, z }: { x: number; y: number; z: number }) {
 export function SpaceScene({
   physicsRef,
   callbacks,
-  fireApiRef,
 }: {
   physicsRef: React.RefObject<SpacePhysics>;
   callbacks: SpaceSceneCallbacks;
-  fireApiRef: React.MutableRefObject<(() => void) | null>;
 }) {
   const shipRef = useRef<THREE.Group>(null);
-  const projectileRefs = useRef<Map<number, THREE.Object3D>>(new Map());
   const lastPromptRef = useRef<string | null>(null);
   const { camera } = useThree();
 
@@ -237,7 +234,6 @@ export function SpaceScene({
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') p.moveX = 1;
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') p.moveY = 1;
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') p.moveY = -1;
-      if (e.key === 'f' || e.key === 'F' || e.key === 'Enter' || e.key === ' ') fire();
     }
     function onKeyUp(e: KeyboardEvent) {
       const p = physicsRef.current;
@@ -252,15 +248,6 @@ export function SpaceScene({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [physicsRef]);
-
-  function fire() {
-    const p = physicsRef.current;
-    if (p.paused) return;
-    const enemy = ENEMY_ENCOUNTERS.find((e) => !p.resolvedEnemyIds.has(e.id) && e.z - p.z < 24 && e.z - p.z > -2);
-    if (!enemy) return;
-    p.projectiles.push({ id: p.nextProjectileId++, x: p.x, y: p.y, z: enemy.z, startZ: p.z, t: 0 });
-  }
-  fireApiRef.current = fire;
 
   useFrame((_, dtRaw) => {
     const p = physicsRef.current;
@@ -349,39 +336,39 @@ export function SpaceScene({
       if (p.pickupEffects[i].age > 0.5) p.pickupEffects.splice(i, 1);
     }
 
-    // --- enemy UFO resolution: only a CORRECT hit destroys/resolves the
-    // encounter — a wrong hit does nothing and the UFO stays, so the
-    // student can keep trying other pods, no penalty for a wrong guess ---
-    for (let i = p.projectiles.length - 1; i >= 0; i--) {
-      const proj = p.projectiles[i];
-      proj.t += dt * 2.6;
-      if (proj.t >= 1) {
-        const enemy = ENEMY_ENCOUNTERS.find((e) => e.z === proj.z);
-        if (enemy && !p.resolvedEnemyIds.has(enemy.id)) {
-          let nearest = 0;
-          let nearestDist = Infinity;
-          enemy.positions.forEach(([x, y], idx) => {
-            const d = Math.hypot(x - proj.x, y - proj.y);
-            if (d < nearestDist) {
-              nearestDist = d;
-              nearest = idx;
-            }
-          });
-          if (nearestDist < 0.9) {
-            const correct = enemy.options[nearest].correct;
-            if (correct) {
-              p.resolvedEnemyIds.add(enemy.id);
-              p.energy = Math.min(100, p.energy + UFO_ENERGY_GAIN);
-              if (p.lives < MAX_LIVES) p.lives += 1;
-              p.boostTimer = 1.6;
-              callbacks.onLivesChange(p.lives);
-              callbacks.onEnergyChange(p.energy);
-            }
-            callbacks.onEnemyResolved(enemy, correct);
-          }
+    // --- enemy UFO resolution: fly directly into the correct pod to
+    // destroy it — restores energy AND a lost life. Flying into a wrong
+    // pod does nothing (no penalty): just peel off and try another, no
+    // separate fire button needed, same as steering into a door ---
+    for (const enemy of ENEMY_ENCOUNTERS) {
+      if (p.resolvedEnemyIds.has(enemy.id)) continue;
+      if (Math.abs(enemy.z - p.z) > 1.0) continue;
+      let nearest = 0;
+      let nearestDist = Infinity;
+      enemy.positions.forEach(([x, y], idx) => {
+        const d = Math.hypot(x - p.x, y - p.y);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearest = idx;
         }
-        p.projectiles.splice(i, 1);
-        projectileRefs.current.delete(proj.id);
+      });
+      if (nearestDist < 0.6) {
+        const correct = enemy.options[nearest].correct;
+        if (correct) {
+          p.resolvedEnemyIds.add(enemy.id);
+          p.energy = Math.min(100, p.energy + UFO_ENERGY_GAIN);
+          if (p.lives < MAX_LIVES) p.lives += 1;
+          p.boostTimer = 1.6;
+          callbacks.onLivesChange(p.lives);
+          callbacks.onEnergyChange(p.energy);
+          callbacks.onEnemyResolved(enemy, true);
+          p.wrongTouchIds.delete(enemy.id);
+        } else if (!p.wrongTouchIds.has(enemy.id)) {
+          p.wrongTouchIds.add(enemy.id);
+          callbacks.onEnemyResolved(enemy, false);
+        }
+      } else if (nearestDist > 0.9) {
+        p.wrongTouchIds.delete(enemy.id);
       }
     }
 
@@ -397,14 +384,6 @@ export function SpaceScene({
     }
     camera.position.set(p.x * 0.5, p.y + 1.2, -p.z + 5.5);
     camera.lookAt(p.x, p.y, -p.z - 3);
-
-    for (const proj of p.projectiles) {
-      const obj = projectileRefs.current.get(proj.id);
-      if (obj) {
-        const worldZ = -(proj.startZ + (proj.z - proj.startZ) * proj.t);
-        obj.position.set(proj.x, proj.y, worldZ);
-      }
-    }
 
     const activeEnemy = ENEMY_ENCOUNTERS.find((e) => !p.resolvedEnemyIds.has(e.id) && e.z - p.z < 30 && e.z - p.z > -2);
     const nextPrompt = activeEnemy?.prompt ?? null;
@@ -453,18 +432,6 @@ export function SpaceScene({
           shipY={physicsRef.current.y}
           resolved={physicsRef.current.resolvedEnemyIds.has(e.id)}
         />
-      ))}
-
-      {physicsRef.current.projectiles.map((proj) => (
-        <mesh
-          key={proj.id}
-          ref={(el) => {
-            if (el) projectileRefs.current.set(proj.id, el);
-          }}
-        >
-          <sphereGeometry args={[0.1, 10, 10]} />
-          <meshStandardMaterial color="#5ce1e6" emissive="#1c9dff" emissiveIntensity={1.2} />
-        </mesh>
       ))}
 
       <group position={[0, 1.8, -LEVEL_END_Z]}>
