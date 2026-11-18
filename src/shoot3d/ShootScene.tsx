@@ -11,6 +11,11 @@ export interface ShootSceneCallbacks {
   onGateHit: (gate: ShootGate, correct: boolean) => void;
   onLevelComplete: () => void;
   onEnergyChange: (energy: number) => void;
+  /** Fired whenever the nearest upcoming, unresolved gate changes (or
+   *  becomes none) — lets the HUD show the question as a fixed banner at
+   *  the top of the screen instead of floating text in 3D space, which
+   *  could drift out of view or read too small depending on camera angle. */
+  onActiveGateChange: (gate: ShootGate | null) => void;
 }
 
 const JUMP_VY = 7.2;
@@ -53,9 +58,6 @@ function BugTargets({ gate, playerZ, selected, hitIds }: { gate: ShootGate; play
           </group>
         );
       })}
-      <Html position={[0, 3.4, 0]} center distanceFactor={6} style={{ opacity, pointerEvents: 'none' }}>
-        <div className="sd-sign-prompt">{gate.prompt}</div>
-      </Html>
     </group>
   );
 }
@@ -72,6 +74,7 @@ export function ShootScene({
   const playerRef = useRef<THREE.Group>(null);
   const projectileRefs = useRef<Map<number, THREE.Object3D>>(new Map());
   const chaserAdapterRef = useRef<ChaserAdapter>({ x: 0, energy: 100 });
+  const lastActiveGateId = useRef<string | null>(null);
   const { camera } = useThree();
   const vy = useRef(0);
   const grounded = useRef(true);
@@ -180,6 +183,14 @@ export function ShootScene({
 
     chaserAdapterRef.current.x = p.z;
     chaserAdapterRef.current.energy = p.energy;
+
+    // report the nearest upcoming unresolved gate so the HUD can show its
+    // question as a fixed, always-readable banner (see onActiveGateChange)
+    const activeGate = PYTHON_FOREST_GATES.find((g) => !p.passedGateIds.has(g.id) && g.z - p.z < 30 && g.z - p.z > -2) ?? null;
+    if ((activeGate?.id ?? null) !== lastActiveGateId.current) {
+      lastActiveGateId.current = activeGate?.id ?? null;
+      callbacks.onActiveGateChange(activeGate);
+    }
   });
 
   return (

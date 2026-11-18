@@ -24,6 +24,7 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
   const [toast, setToast] = useState<string | null>(null);
   const [result, setResult] = useState<'none' | 'won' | 'lost' | 'caught'>('none');
   const [showLab, setShowLab] = useState(false);
+  const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
   const mission = getMission('w1-l1');
@@ -72,6 +73,10 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
     setShowLab(true);
   }
 
+  function handleActiveGateChange(gate: ShootGate | null) {
+    setActivePrompt(gate?.prompt ?? null);
+  }
+
   function startRun() {
     setIntro(false);
     physicsRef.current.paused = false;
@@ -87,14 +92,28 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
         <ShootScene
           physicsRef={physicsRef}
           fireApiRef={fireApiRef}
-          callbacks={{ onGateHit: handleGateHit, onLevelComplete: handleLevelComplete, onEnergyChange: handleEnergyChange }}
+          callbacks={{
+            onGateHit: handleGateHit,
+            onLevelComplete: handleLevelComplete,
+            onEnergyChange: handleEnergyChange,
+            onActiveGateChange: handleActiveGateChange,
+          }}
         />
       </Canvas>
 
+      {/* The question itself — pinned to the very top of the screen, above
+          everything else, so it's never missed or left floating off-camera
+          in 3D space. This is the first thing rendered in the HUD. */}
+      {running && activePrompt && (
+        <div className="sd-question-banner">{activePrompt}</div>
+      )}
+
       {/* HUD chrome reused from Python Legends' own runner — energy bar,
           pill style — so this mode still reads as Python Legends, not a
-          recolor of SQL Quest's demo. */}
-      <div className="runner-hud" data-ui>
+          recolor of SQL Quest's demo. Pushed down a fixed amount (not
+          conditionally, so nothing jumps) to always leave room for the
+          question banner above it. */}
+      <div className="runner-hud" data-ui style={{ top: 44 }}>
         <div className="runner-hud-top">
           <button className="runner-pill runner-back" onClick={onExit}>← Exit demo</button>
           <div className="runner-pill" data-low={timeLeft <= 10}>⏱ {mins}:{secs}</div>
