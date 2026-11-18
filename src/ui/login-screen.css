@@ -23,7 +23,10 @@
 .login-card h1 {
   margin: 0 0 4px;
   font-size: 1.5rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: #d7f0ff;
   text-shadow: 0 0 14px rgba(90, 200, 255, 0.45);
 }

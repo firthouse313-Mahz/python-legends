@@ -3,6 +3,7 @@ import { WORLDS, type LevelDef, type WorldDef } from '../curriculum/worlds';
 import { progressService, type LevelStatus, type PathwayChoice } from '../progress/progressService';
 import { visualFor } from './worldMapTheme';
 import { Mascot } from './Mascot';
+import { Emblem } from './Emblem';
 import type { AccountIdentity } from '../account/accountService';
 import './world-map.css';
 
@@ -284,7 +285,7 @@ export function WorldMapScreen({ onPlayLevel, identity, onLogOut, muted, onToggl
       <aside className="wm-sidebar">
         <div className="wm-brand">
           <span className="wm-brand-eyebrow">DIGI CLASS</span>
-          <h1 className="wm-brand-name">🐍 Python Legends</h1>
+          <h1 className="wm-brand-name"><Emblem size={22} /> Python Legends</h1>
         </div>
         <nav className="wm-nav">
           <button className={`wm-nav-item ${view === 'explore' ? 'active' : ''}`} onClick={() => setView('explore')}>

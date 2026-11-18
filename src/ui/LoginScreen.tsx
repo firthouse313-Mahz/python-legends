@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { accountService, type AccountIdentity, type LoginError } from '../account/accountService';
+import { Emblem } from './Emblem';
 import './login-screen.css';
 
 const ERROR_MESSAGE: Record<LoginError, string> = {
@@ -34,7 +35,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (identity: AccountIden
   return (
     <div className="login-screen">
       <div className="login-card">
-        <h1>🐍 Python Legends</h1>
+        <h1><Emblem size={30} /> Python Legends</h1>
         <p className="login-tag">PLAY. EXPLORE. CODE. CONQUER.</p>
         <form className="login-form" onSubmit={submit}>
           <label>
