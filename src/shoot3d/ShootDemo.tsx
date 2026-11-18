@@ -79,6 +79,7 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
 
   const mins = Math.floor(timeLeft / 60);
   const secs = String(timeLeft % 60).padStart(2, '0');
+  const aimLabels = ['◀ LEFT', 'CENTER', 'RIGHT ▶'];
 
   return (
     <div className="runner-root">
@@ -108,6 +109,12 @@ export function ShootDemo({ onExit }: { onExit: () => void }) {
         </div>
         {running && <div className="runner-progress" data-ui>🐛 Bug Hunt — a wild pursuer closes in on every miss</div>}
       </div>
+
+      {running && (
+        <div className="sd-aim-indicator">
+          🎯 AIMING: <b>{aimLabels[physicsRef.current.aim]}</b> — move with ◀ ▶, then FIRE
+        </div>
+      )}
 
       {toast && <div className="sd-toast">{toast}</div>}
 

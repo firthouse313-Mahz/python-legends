@@ -3,9 +3,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { ShootAvatar } from './ShootAvatar';
-import { currentSpeed, MISS_ENERGY_COST, type ShootPhysics, BOOST_DURATION } from './shootPhysics';
+import { currentSpeed, LANE_LERP, MISS_ENERGY_COST, type ShootPhysics, BOOST_DURATION } from './shootPhysics';
 import { Chaser } from '../runner/Chaser';
-import { PYTHON_FOREST_GATES, LEVEL_END_Z, type ShootGate } from './shootGates';
+import { PYTHON_FOREST_GATES, LANE_X, TARGET_FIXED_Y, LEVEL_END_Z, type ShootGate } from './shootGates';
 
 export interface ShootSceneCallbacks {
   onGateHit: (gate: ShootGate, correct: boolean) => void;
@@ -16,10 +16,6 @@ export interface ShootSceneCallbacks {
 const JUMP_VY = 7.2;
 const GRAVITY = -19;
 
-// Mirrors Chaser's own RunnerPhysics shape just enough to drive it off this
-// game's own energy value — keeps the pursuing-threat identity Python
-// Legends already has, instead of borrowing SQL Quest's flat countdown-only
-// tension.
 interface ChaserAdapter {
   x: number;
   energy: number;
@@ -32,13 +28,12 @@ function BugTargets({ gate, playerZ, selected, hitIds }: { gate: ShootGate; play
   return (
     <group position={[0, 0, -gate.z]}>
       {gate.options.map((opt, i) => {
-        const [x, y] = gate.positions[i];
         const isSelected = i === selected;
         return (
-          <group key={i} position={[x, y, 0]}>
+          <group key={i} position={[LANE_X[i], TARGET_FIXED_Y, 0]}>
             {isSelected && (
-              <mesh rotation={[0, 0, Math.PI / 4]}>
-                <ringGeometry args={[0.42, 0.5, 4]} />
+              <mesh rotation={[0, 0, Math.PI / 4]} position={[0, 0.65, 0]}>
+                <coneGeometry args={[0.16, 0.3, 4]} />
                 <meshBasicMaterial color="#ffd166" transparent opacity={opacity} />
               </mesh>
             )}
@@ -53,7 +48,7 @@ function BugTargets({ gate, playerZ, selected, hitIds }: { gate: ShootGate; play
               />
             </mesh>
             <Html center distanceFactor={6} style={{ opacity, pointerEvents: 'none', width: 120 }}>
-              <div className="sd-bug-label">{opt.text}</div>
+              <div className={`sd-bug-label${isSelected ? ' sd-bug-label-selected' : ''}`}>{opt.text}</div>
             </Html>
           </group>
         );
@@ -86,8 +81,8 @@ export function ShootScene({
     function onKey(e: KeyboardEvent) {
       const p = physicsRef.current;
       if (p.paused) return;
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') p.aim = ((p.aim + 2) % 3) as 0 | 1 | 2;
-      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') p.aim = ((p.aim + 1) % 3) as 0 | 1 | 2;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') p.aim = Math.max(0, p.aim - 1) as 0 | 1 | 2;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') p.aim = Math.min(2, p.aim + 1) as 0 | 1 | 2;
       if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         if (grounded.current) {
           vy.current = JUMP_VY;
@@ -106,13 +101,11 @@ export function ShootScene({
     if (p.paused) return;
     const nextGate = PYTHON_FOREST_GATES.find((g) => !p.passedGateIds.has(g.id) && g.z - p.z < 22 && g.z - p.z > -2);
     if (!nextGate) return;
-    const [tx, ty] = nextGate.positions[p.aim];
+    // Fires straight ahead from wherever the player currently stands —
+    // the strafe IS the aim; the shot itself never bends sideways.
     p.projectiles.push({
       id: p.nextProjectileId++,
-      fromX: 0.35,
-      fromY: 0.55,
-      targetX: tx,
-      targetY: ty,
+      x: p.playerX,
       z: nextGate.z,
       startZ: p.z,
       t: 0,
@@ -129,6 +122,9 @@ export function ShootScene({
     if (p.bumpTimer > 0) p.bumpTimer = Math.max(0, p.bumpTimer - dt);
 
     p.z += currentSpeed(p) * dt;
+    // visibly strafe toward the selected lane — this is the fix: the
+    // avatar itself now moves, not just an invisible selection index.
+    p.playerX += (LANE_X[p.aim] - p.playerX) * Math.min(1, LANE_LERP * dt);
 
     vy.current += GRAVITY * dt;
     playerY.current += vy.current * dt;
@@ -140,13 +136,13 @@ export function ShootScene({
 
     for (let i = p.projectiles.length - 1; i >= 0; i--) {
       const proj = p.projectiles[i];
-      proj.t += dt * 2.6;
+      proj.t += dt * 2.8;
       if (proj.t >= 1) {
         const gate = PYTHON_FOREST_GATES.find((g) => g.z === proj.z);
         if (gate && !p.passedGateIds.has(gate.id)) {
           p.passedGateIds.add(gate.id);
-          const hitIndex = gate.positions.findIndex(([x, y]) => x === proj.targetX && y === proj.targetY);
-          const correct = gate.options[hitIndex]?.correct ?? false;
+          const hitLane = LANE_X.findIndex((x) => Math.abs(x - proj.x) < 0.4);
+          const correct = gate.options[hitLane]?.correct ?? false;
           if (correct) {
             p.boostTimer = BOOST_DURATION;
           } else {
@@ -167,25 +163,21 @@ export function ShootScene({
     }
 
     if (playerRef.current) {
-      playerRef.current.position.set(0, playerY.current, -p.z);
-      playerRef.current.rotation.x = grounded.current ? 0 : 0.15;
+      playerRef.current.position.set(p.playerX, playerY.current, -p.z);
+      const tilt = grounded.current ? 0 : 0.15;
+      playerRef.current.rotation.set(tilt, 0, (LANE_X[p.aim] - p.playerX) * -0.15);
     }
-    camera.position.set(0, playerY.current + 2.2, -p.z + 5.2);
-    camera.lookAt(0, playerY.current + 1.4, -p.z - 2);
+    camera.position.set(p.playerX * 0.5, playerY.current + 2.2, -p.z + 5.2);
+    camera.lookAt(p.playerX, playerY.current + 1.4, -p.z - 2);
 
     for (const proj of p.projectiles) {
       const obj = projectileRefs.current.get(proj.id);
       if (obj) {
         const worldZ = -(proj.startZ + (proj.z - proj.startZ) * proj.t);
-        const x = proj.fromX + (proj.targetX - proj.fromX) * proj.t;
-        const y = proj.fromY + (proj.targetY - proj.fromY) * proj.t;
-        obj.position.set(x, y, worldZ);
+        obj.position.set(proj.x, 1.1, worldZ);
       }
     }
 
-    // drive the pursuing Chaser off this game's own energy (closes in as
-    // misses pile up) — the same pressure device Python Legends' main
-    // runner already uses, so this mode still reads as "Python Legends."
     chaserAdapterRef.current.x = p.z;
     chaserAdapterRef.current.energy = p.energy;
   });
@@ -200,11 +192,10 @@ export function ShootScene({
         <planeGeometry args={[7, LEVEL_END_Z + 30]} />
         <meshStandardMaterial color="#3f8f52" />
       </mesh>
-      {/* scattered forest trees for depth, unlike SQL Quest's open road */}
       {Array.from({ length: 24 }).map((_, i) => {
         const side = i % 2 === 0 ? -1 : 1;
         const tz = -(6 + Math.floor(i / 2) * 9);
-        const tx = side * (2.6 + (i % 3) * 0.6);
+        const tx = side * (3.0 + (i % 3) * 0.6);
         return (
           <mesh key={i} position={[tx, 1, tz]}>
             <coneGeometry args={[0.7, 2.1, 7]} />

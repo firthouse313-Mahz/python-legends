@@ -1,29 +1,29 @@
-// Mutable per-frame state for the aim-and-shoot prototype. Same pattern as
-// the SQL Quest lane-runner: kept outside React state so the 60fps loop
-// never triggers a re-render — only discrete events cross back into React.
+// Mutable per-frame state for the aim-and-shoot prototype. Kept outside
+// React state so the 60fps loop never triggers a re-render — only
+// discrete events cross back into React.
 
 export const BASE_SPEED = 5.2;
 export const BOOST_SPEED = 8.2;
 export const BOOST_DURATION = 2.0;
 export const MAX_ENERGY = 100;
 export const MISS_ENERGY_COST = 18;
+export const LANE_LERP = 9; // how snappy the visible strafe feels
 
 export interface Projectile {
   id: number;
-  fromX: number;
-  fromY: number;
-  targetX: number;
-  targetY: number;
-  z: number; // world-z the shot was fired at (fixed; only its t changes)
+  x: number; // fixed — fires straight ahead from wherever the player is aimed
+  z: number; // world-z the gate sits at; only t changes
   startZ: number;
   t: number; // 0..1 travel progress
 }
 
 export interface ShootPhysics {
   z: number;
-  /** Index (0/1/2) into the current gate's scattered bug positions —
-   *  cycling through live targets, not steering between fixed lanes. */
+  /** Target lane (0/1/2 = left/mid/right). playerX lerps toward this. */
   aim: 0 | 1 | 2;
+  /** The avatar's actual, currently-visible world-x — what the camera and
+   *  render loop use, always a step behind `aim` while it catches up. */
+  playerX: number;
   boostTimer: number;
   bumpTimer: number;
   energy: number;
@@ -37,6 +37,7 @@ export function createShootPhysics(): ShootPhysics {
   return {
     z: 0,
     aim: 1,
+    playerX: 0,
     boostTimer: 0,
     bumpTimer: 0,
     energy: MAX_ENERGY,

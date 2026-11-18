@@ -1,9 +1,13 @@
-// Each gate is a "shoot the correct answer" moment: three floating signs
-// appear ahead, one per lane. The student aims (left/right) and fires —
-// hitting the correct one keeps the run going at full speed with a boost;
-// missing just costs a brief stumble, never a stop. Real code-writing
-// stays in the separate lab overlay (PythonLabOverlay) — this mode is for
-// fast concept checks only.
+// Each gate is a "shoot the correct answer" moment: three bugs appear
+// ahead, one per lane. The student strafes the character into a lane
+// (visibly moving, not just toggling an invisible selection) and fires —
+// hitting the correct lane keeps the run going with a boost; missing
+// just costs a brief stumble and some energy, never a stop. Real
+// code-writing stays in the separate lab overlay — this mode is for fast
+// concept checks only.
+
+export const LANE_X = [-1.6, 0, 1.6] as const; // left, mid, right — same lanes the avatar strafes into
+const TARGET_Y = 1.6; // fixed height so aiming is purely left/right, never ambiguous
 
 export interface ShootOption {
   text: string;
@@ -15,14 +19,8 @@ export interface ShootGate {
   z: number;
   prompt: string;
   options: [ShootOption, ShootOption, ShootOption];
-  /** World-x, world-y for each option — scattered like a shooting gallery,
-   *  not a neat row of three doors (that's SQL Quest's identity; this game
-   *  is "bugs swarming at different heights," not "pick a lane"). */
-  positions: [[number, number], [number, number], [number, number]];
 }
 
-// Python Forest / World 1 opening — variables, print, and data types,
-// phrased as things to shoot rather than questions to stop and answer.
 export const PYTHON_FOREST_GATES: ShootGate[] = [
   {
     id: 'g1',
@@ -32,11 +30,6 @@ export const PYTHON_FOREST_GATES: ShootGate[] = [
       { text: 'print(Hello, World!)', correct: false },
       { text: 'print("Hello, World!")', correct: true },
       { text: 'echo "Hello, World!"', correct: false },
-    ],
-    positions: [
-      [-1.5, 2.3],
-      [0.4, 1.3],
-      [1.7, 2.7],
     ],
   },
   {
@@ -48,11 +41,6 @@ export const PYTHON_FOREST_GATES: ShootGate[] = [
       { text: 'int', correct: true },
       { text: 'bool', correct: false },
     ],
-    positions: [
-      [1.6, 1.4],
-      [-0.6, 2.6],
-      [-1.8, 1.6],
-    ],
   },
   {
     id: 'g3',
@@ -62,11 +50,6 @@ export const PYTHON_FOREST_GATES: ShootGate[] = [
       { text: 'name == 10', correct: false },
       { text: '10 = name', correct: false },
       { text: 'name = 10', correct: true },
-    ],
-    positions: [
-      [-1.4, 1.5],
-      [1.5, 2.5],
-      [0.1, 2.0],
     ],
   },
   {
@@ -78,12 +61,11 @@ export const PYTHON_FOREST_GATES: ShootGate[] = [
       { text: '5', correct: true },
       { text: 'Error', correct: false },
     ],
-    positions: [
-      [1.3, 1.3],
-      [-1.0, 2.8],
-      [0.5, 1.8],
-    ],
   },
 ];
 
+export function laneXOf(index: 0 | 1 | 2): number {
+  return LANE_X[index];
+}
+export const TARGET_FIXED_Y = TARGET_Y;
 export const LEVEL_END_Z = 112;
