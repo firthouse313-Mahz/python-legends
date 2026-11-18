@@ -12,6 +12,7 @@ const LEVEL_TIME = 55;
 
 export function SpaceDemo({ onExit }: { onExit: () => void }) {
   const physicsRef = useRef(createSpacePhysics());
+  const fireApiRef = useRef<(() => void) | null>(null);
   const runnerRef = useRef<PyodideRunner | null>(null);
   if (!runnerRef.current) runnerRef.current = new PyodideRunner();
 
@@ -110,6 +111,7 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
       <Canvas shadows camera={{ fov: 62, near: 0.1, far: 220 }}>
         <SpaceScene
           physicsRef={physicsRef}
+          fireApiRef={fireApiRef}
           callbacks={{
             onPlanetHit: handlePlanetHit,
             onCometHit: handleCometHit,
@@ -142,10 +144,12 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
       {running && <div className="spc-mission-note">🌌 Space Guardians — dodge planets, clean the galaxy, destroy enemy UFOs</div>}
 
       {toast && <div className="spc-toast">{toast}</div>}
-      {running && showTip && !toast && <div className="spc-tip">🧲 Fly close to the glowing ♻️ plastic — it gets pulled in and collected</div>}
+      {running && showTip && !toast && (
+        <div className="spc-tip">🧲 Fly close to ♻️ plastic to collect it · line up with a UFO and press ↑ to fire</div>
+      )}
 
       {running && (
-        <div className="spc-controls spc-controls-solo">
+        <div className="spc-controls">
           <div className="spc-dpad">
             <button className="spc-dpad-btn spc-dpad-up" onPointerDown={() => (physicsRef.current.moveY = 1)} onPointerUp={() => (physicsRef.current.moveY = 0)} aria-label="Up">▲</button>
             <div className="spc-dpad-mid">
@@ -154,6 +158,7 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
             </div>
             <button className="spc-dpad-btn spc-dpad-down" onPointerDown={() => (physicsRef.current.moveY = -1)} onPointerUp={() => (physicsRef.current.moveY = 0)} aria-label="Down">▼</button>
           </div>
+          <button className="spc-fire-btn" onClick={() => fireApiRef.current?.()} aria-label="Fire">🔫 FIRE</button>
         </div>
       )}
 
@@ -166,10 +171,10 @@ export function SpaceDemo({ onExit }: { onExit: () => void }) {
               the rotating planets — hit one and you lose a life, and it bursts into comet
               shards that keep flying and can hit you too. Fly through the floating plastic and
               debris to clean the galaxy and recharge energy. When an enemy UFO blocks the way,
-              just steer straight into the pod carrying the correct answer — no extra button,
-              flying into it is the answer. Get it right and the UFO is destroyed, restoring
-              both energy and a lost life; fly into a wrong one and nothing happens, just steer
-              toward another. At the end, a real code terminal opens for the actual mission.
+              line up with the pod carrying the correct answer and fire (↑ arrow, the FIRE
+              button, or F/Enter) — a correct hit destroys the UFO and restores both energy and
+              a lost life; a wrong hit does nothing, so just re-aim and try again. At the end, a
+              real code terminal opens for the actual mission.
             </p>
             <p className="spc-card-sub">3 lives. 55 seconds. Destroying a UFO adds time, energy, and a life.</p>
             <button className="spc-start-btn" onClick={startRun} autoFocus>Launch ▶</button>

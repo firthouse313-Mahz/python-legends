@@ -125,8 +125,16 @@
   padding: 0 20px;
   z-index: 5;
 }
-.spc-controls-solo {
-  justify-content: center;
+.spc-fire-btn {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid #5ce1e6;
+  background: #1c9dff;
+  color: #05081a;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 .spc-dpad {
   display: grid;

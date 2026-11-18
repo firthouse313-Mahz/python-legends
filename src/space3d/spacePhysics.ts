@@ -21,6 +21,15 @@ export const COMET_LIFE_RISK = true; // a comet hit costs a life, like a planet
 export const DEBRIS_MAGNET_RADIUS = 1.6;
 export const DEBRIS_COLLECT_RADIUS = 0.65;
 
+export interface Projectile {
+  id: number;
+  x: number;
+  y: number;
+  z: number; // world-z target (the UFO's z)
+  startZ: number;
+  t: number;
+}
+
 /** A single comet shard, spawned when a planet bursts — keeps moving
  *  forward relative to the galaxy (toward the ship) for a few seconds as
  *  a real obstacle, not just a decorative particle. */
@@ -58,12 +67,10 @@ export interface SpacePhysics {
   hitPlanetIds: Set<string>;
   collectedDebrisIds: Set<string>;
   resolvedEnemyIds: Set<string>;
-  // encounters the ship is currently overlapping with the WRONG pod —
-  // used only to show the "not quite" toast once per touch rather than
-  // every frame while still overlapping it.
-  wrongTouchIds: Set<string>;
   comets: CometShard[];
   nextCometId: number;
+  projectiles: Projectile[];
+  nextProjectileId: number;
   pickupEffects: PickupEffect[];
   nextPickupEffectId: number;
 }
@@ -83,9 +90,10 @@ export function createSpacePhysics(): SpacePhysics {
     hitPlanetIds: new Set(),
     collectedDebrisIds: new Set(),
     resolvedEnemyIds: new Set(),
-    wrongTouchIds: new Set(),
     comets: [],
     nextCometId: 1,
+    projectiles: [],
+    nextProjectileId: 1,
     pickupEffects: [],
     nextPickupEffectId: 1,
   };
